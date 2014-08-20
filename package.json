@@ -1,0 +1,33 @@
+{
+    "name": "legacy_systems",
+    "version": "0.0.0",
+    "description": "(plugin) An interface to our legacy system data.",
+    "main": "module.js",
+    "directories": {
+        "test": "test"
+    },
+    "scripts": {
+        "test": "make test",
+        "postinstall": "node setup/setup.js",
+        "postupdate": "node setup/setup.js"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git://github.com/appdevdesigns/legacy_systems.git"
+    },
+    "author": "Johnny Hausman",
+    "license": "ISC",
+    "bugs": {
+        "url": "https://github.com/appdevdesigns/legacy_systems/issues"
+    },
+    "homepage": "https://github.com/appdevdesigns/legacy_systems",
+    "dependencies": {
+        "ad-utils": "git://github.com/appdevdesigns/ad-utils"
+    },
+    "devDependencies": {
+        "chai": "^1.9.1",
+        "mocha": "^1.21.3",
+        "mocha-phantomjs": "^3.5.0",
+        "phantomjs": "^1.9.7-15"
+    }
+}
