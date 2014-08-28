@@ -149,7 +149,7 @@ module.exports= {
             //// 
             //// do some error checking on our given options:
             ////
-            options = self._resolveOptionsByGUID(options);
+            options = self._resolveOptions(options, 'guids');
 
 
             // verify filter value
