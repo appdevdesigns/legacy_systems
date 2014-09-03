@@ -157,7 +157,7 @@ module.exports= {
 
 
             // if guids are provided, just add that to filter now:
-            if (options.guids.length > 0) {
+            if (options.guids) {
                 filter.ren_guid = options.guids;
             }
 
@@ -595,7 +595,7 @@ var createLookups = function( resource, idListKey, idKey, fnKeyID, fnKeyGUID) {
 
 
     module.exports[fnKeyID] = function(options){
-AD.log('... pkLookup(): resource['+resource+'] idListKey['+idListKey+'] idKey['+idKey+'] fnKeyID['+fnKeyID+'] fnKeyGUID['+fnKeyGUID+']');
+// AD.log('... pkLookup(): resource['+resource+'] idListKey['+idListKey+'] idKey['+idKey+'] fnKeyID['+fnKeyID+'] fnKeyGUID['+fnKeyGUID+']');
 
         var dfd = AD.sal.Deferred();
         var self = this;
@@ -659,7 +659,7 @@ AD.log('... pkLookup(): resource['+resource+'] idListKey['+idListKey+'] idKey['+
      *  @return [array] 
      */
     module.exports[fnKeyGUID] = function(options){
-AD.log('... guidLookup(): resource['+resource+'] idListKey['+idListKey+'] idKey['+idKey+'] fnKeyID['+fnKeyID+'] fnKeyGUID['+fnKeyGUID+']');
+// AD.log('... guidLookup(): resource['+resource+'] idListKey['+idListKey+'] idKey['+idKey+'] fnKeyID['+fnKeyID+'] fnKeyGUID['+fnKeyGUID+']');
         var dfd = AD.sal.Deferred();
         var self = this;
 

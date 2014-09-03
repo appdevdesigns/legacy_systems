@@ -67,118 +67,253 @@ Log('allAccounts:', allAccounts);
 
 
 
-        staffForNSC:function( GUID ) {
+
+
+
+
+
+        /**
+         *  @function staffForNSCByGUID
+         *
+         *  Return an array of HRIS Ren + NSSRen info for the people who have an NSC 
+         *  whose GUID matches one of the given GUIDs.
+         *
+         *  If no GUIDs are provided, then ALL current NSSRen matches will be returned.
+         *
+         *  Each data packet should contain the following information:
+         *      {
+         *          HRISRen Info
+         *          LegacyStewardwise:{LNSSCoreRen packt}
+         *      }
+         *
+         *  @param [object] options     : list of options
+         *                  options.guids : list of ren guids who are assigend as NSC
+         *                  options.populate : list of related fields to populate results with.
+         *                      each entry can either be a:
+         *                          'string' : 'email' : populate('email')
+         *                          'object' : {key:'email', filter:{email_issecure:1}}
+         *                  options.filter   : additional filter for who to pull out
+         *
+         *  @return [array] 
+         */
+        staffForNSCByGUID:function( options ) {
             var dfd = AD.sal.Deferred();
+            var self = this;
+
+//// TODO: figure out options.filter  application.
+////        -> do we keep it simple and only apply it to one Model.find()?  Which one?
+////        -> do we expand it, and allow: { hrisren.ren_isfamilypoc:1, nssren.nssren_isActive:1 }
+////            --> [modelkey].[fieldkey] : {filterValue}
+////            then each time we Model.find() apply the appropriate set of filters?
+
+
+            //// 
+            //// do some error checking on our given options:
+            ////
+            options = LegacySystems._resolveOptions(options, 'guids');
 
 
             if (Log == null) Log = MPDReportGen.Log;
 
-            // lookup nss_core_nsc  to get nscID
-            NssCoreNSC.findOne({ ren_guid:GUID })
-            .fail(function(err){
+            var finalResponse = [];
 
-console.log('Error looking up NSS CORE Ren:');
-console.log(err);
-                dfd.reject(err);
 
-            })
-            .then(function(NSC) {
+            var listNSCs = null;    // the list of NSCs matching the provided guids:[].  
+                                    // if no guids provided, this should remain null.
 
-                // lookup all nss_core_nscterritory entries
-                NssCoreNSCTerritory.find({ nsc_id:NSC.nsc_id })
-                .fail(function(err){
-console.log('Error looking up NSS CORE NSCTerritory:');
-console.log(err);  
-                    dfd.reject(err);
-                })
-                .then(function(nscTerritories){
+            var listTerritoryIDs = null;  // the list of Territories any requested NSCs
+                                    // are in.  if no guids provided, this should remain null.
 
-                    // lookup all nss_core_ren with same territoryID
+            var listNSCRen = null;  // all the NSSRen entries that match the territories of
+                                    // the NSCs we are requesting
 
-                    // 1) compile all the territory id's:
-                    var territoryIDs = [];
-                    nscTerritories.forEach(function(territory){
-                        territoryIDs.push(territory.territory_id);
+
+            async.series([
+
+                // step 1: look up our NSC matches
+                function(next) {
+
+                    // don't bother with this step if we weren't given any guids:
+                    if ( typeof options.guids == 'undefined') {
+
+                        next();
+
+                    } else {
+
+
+                        var filter = {}; // options.filter;
+                        if (options.guids) {
+                            if (filter.ren_guid) {
+                                AD.log('<yellow><bold>warn:</bold></yellow> possible ren_guid conflict in call to staffForNSCByGUID(), options:', options);
+                                AD.log('... options.guids takes precedence');
+                            }
+                            filter.ren_guid = options.guids;
+                        }
+
+                        LNSSCoreNSC.find(filter)
+                        .fail(function(err){
+
+                            AD.log.error('... error looking up NSSCoreRen: ', err);
+                            next(err);
+
+                        })
+                        .done(function(list) {
+
+                            // it is possible to request using guids:['xxx'] and 
+                            // still get no results. (list == undefined)
+
+                            // in this case we return an [] which results in 0
+                            // responses.
+
+                            listNSCs = list || [];
+                            next();
+                        });
+
+                    }
+
+                },
+
+
+
+                // step 2: look up the territories for this NSC
+                function(next) {
+
+                    // if no NSC GUIDs were requested:
+                    // listNSCs is still null, so skip to next step
+                    if (listNSCs == null) {
+                        next();
+                        return;
+                    }
+
+                    // if there were no NSCs returned:
+                    // listNSCs will be [].length == 0
+                    // so we simply set listTerritoryIDs = [] and next step.
+                    if (listNSCs.length == 0) {
+                        listTerritoryIDs = [];  // <-- no valid territories then.
+                        next();
+                        return;
+                    }
+
+                    // otherwise we now lookup their territories:
+                    // lookup all nss_core_nscterritory entries
+                    var nscIDs = arrayOf('nsc_id', listNSCs);
+                    
+                    LNSSCoreNSCTerritory.find({ nsc_id:nscIDs})
+                    .fail(function(err){
+                        AD.log.error('... error looking up NSS CORE NSCTerritory:', err); 
+                        next(err);
+                    })
+                    .done(function(nscTerritories){
+
+                        // lookup all nss_core_ren with same territoryID
+
+                        // 1) compile all the territory id's:
+                        listTerritoryIDs = [];
+
+                        if (nscTerritories) {
+                            listTerritoryIDs = arrayOf('territory_id', nscTerritories);
+                        }
+
+
+                        next();
+
                     });
 
-                    // 2) find ren with any of those id's
-                    NssRen.find({territory_id:territoryIDs})
+
+                },
+
+
+                // step 3: now lookup all NSSRen with these territories
+                function(next) {
+
+                    // if listTerritoryIDs is an empty []
+                    // this means guids were provided, but no matching entries
+                    // were found.
+                    // we should just skip on with listNSCRen == []
+                    if ((listTerritoryIDs) && (listTerritoryIDs.length == 0)) {
+                        listNSCRen = [];
+                        next();
+                        return;
+                    }
+
+
+                    // if territoryIDs is null, then no guids were used to search by, so 
+                    // now simply find all NSSRen:
+
+                    var filter = options.filter || {};
+// AD.log('... listTerritoryIDs:', listTerritoryIDs);
+                    if( listTerritoryIDs ) {
+                        filter.territory_id = listTerritoryIDs;
+                    }
+
+                    if (typeof filter.nssren_isActive == 'undefined')  filter.nssren_isActive = { '!': 0 };
+
+// AD.log('... filter:', filter);
+
+                    LNSSRen.find(filter)
                     .fail(function(err){
-console.log('Error looking up NSS CORE Ren by territoryIDs:');
-console.log(err);  
-                        dfd.reject(err);
+                        next(err);
                     })
-                    .then(function(allRen){
+                    .done(function(list){
 
-
-                        // merge this all with the HRIS info:
-                        // 1) compile all the ren_guids:
-                        var renGUIDs = [];
-                        allRen.forEach(function(ren){
-                            if (ren.ren_guid) {
-                                renGUIDs.push(ren.ren_guid);
-                            }
-                        })
-
-                        HRISRen.find({ren_guid:renGUIDs})
-                        .fail(function(err){
-console.log('Error looking up NSS CORE Ren by territoryIDs:');
-console.log(err);  
-                            dfd.reject(err);
-                        })
-                        .then(function(hrisRenList){
-
-
-                            // now setup a map Object to merge our final info:
-                            var finalResults = {};
-
-                            // find accounts for each of these people:
-                            var renFamilyIDs = [];
-                            hrisRenList.forEach(function(ren){
-                                renFamilyIDs.push(ren.family_id);
-
-                                ren.account = { account_number:'???' };
-                                finalResults[ren.family_id] = ren;
-                            })
-
-                            // Lookup All Accounts
-                            HRISAccount.find({family_id:renFamilyIDs, account_isprimary:1 })
-                            .fail(function(err){
-console.log('Error looking up HRISAccounts:');
-console.log(err); 
-                                dfd.reject(err);
-                            })
-                            .then(function(allAccounts){
-//console.log('Found Accounts:');
-//console.log(allAccounts);
-//console.log('number of Accounts:');
-//console.log(allAccounts.length);   
-    
-                                // now merge these accounts into the ren data:
-                                allAccounts.forEach(function(account){
-                                    finalResults[account.family_id].account = account;
-                                })
-
-                                // now return an array of these ren:
-                                var results = [];
-                                for (var fID in finalResults) {
-                                    results.push(finalResults[fID]);
-                                }
-
-                                dfd.resolve(results);
-
-
-                            })
-
-                        })
-
+                        listNSCRen = list;
+                        next();
 
                     })
 
+                },
 
-                })
+
+                // step 4: now merge this all with their HRIS info:
+                function(next) {
+
+                    // if we found no matching listNSCRen, then set our final
+                    // response to [] and continue.
+                    if ((listNSCRen) && (listNSCRen.length == 0)) {
+                        finalResponse = [];
+                        next();
+                        return;
+                    }
+
+
+                    // otherwise we have some listNSCRen to pull out of 
+                    // LegacyHRIS
+
+
+                    var nssGUIDs = arrayOfUnique('ren_guid', listNSCRen);
+                    LegacyHRIS.peopleByGUID({guids:nssGUIDs, populate:['staffAccounts']})
+                    .fail(function(err){
+                        AD.log.error('... error looking up HRIS.peopleByGUID() : ', err);
+                        next(err);
+                    })
+                    .then(function(list){
+
+                        //// now insert the NSS data into the HRIS data as
+                        //// .LegacyStewardwise
+                        var nssHash = toHashUnique('ren_guid', listNSCRen);
+
+                        list.forEach(function(entry){
+
+                            entry.LegacyStewardwise = nssHash[entry.ren_guid];
+                        })
+
+                        finalResponse = list;
+
+                        next();
+
+                    })
                     
+                }
+
+            ],function(err, results) {
+
+                if (err) {
+                    dfd.reject(err);
+                } else {
+                    dfd.resolve(finalResponse);
+                }
             })
+
 
             return dfd;
         },
@@ -186,32 +321,78 @@ console.log(err);
 
 
 
-        _resolveOptions:function(options, pkList){
+        /**
+         *  @function _resolveOptions
+         *
+         *  Initialize a give set of options to proper default values.
+         *
+         *  In our exposed API, a set of options can have the following fields:
+         * 
+         *  options[pkList] an [] of values used to filter the desired results
+         *
+         *                  The key for this list can change depending on what 
+         *                  kind of API method is being used:
+         *                      xxxxByGUID()    :   'guids'
+         *                      xxxxByNSRenID() :   'nssrenids' 
+         *
+         *                  if nothing is provided for pkList, then it defaults
+         *                  to null.
+         *
+         *  populate:[]     is an array of additional information from the root 
+         *                  data type(s), that should also be included in the 
+         *                  output.
+         *
+         *                  So if you are looking for HRIS people, you might 
+         *                  also want to make sure to include : 
+         *                      'staffAccount', 'phones', 'emails' 
+         *
+         *  filter:{}       is an object the defines additional filtering 
+         *                  information for the data you want to pull out.
+         *
+         *
+         *
+         *  @param [object] options     : list of options
+         *                  options.guids : list of ren guids
+         *                  options.populate : list of related fields to 
+         *                                     populate results with.
+         *                      each entry can either be a:
+         *                          'string' : 'email' : populate('email')
+         *                          'object' : {key:'email', filter:{email_issecure:1}}
+         *                  options.filter   : additional filter for who to 
+         *                                     pull out
+         *  @param {string} pkList      : the name of the field to use for our
+         *                                lookup key list.
+         *
+         *  @return [array] 
+         */
+        // _resolveOptions:function(options, pkList){
 
-            // if nothing,  set to empty values
-            options = options || {};    // default to none
+        //     // if nothing,  set to empty values
+        //     options = options || {};    // default to none
 
+        //     pkList = pkList || '_';     // default to '_' which should confuse everyone.
 
-            // did they send us a csv string?
-            // ****ByRenID('ren_id1, ren_id2, ..., ren_idN') :=>
-            if (typeof options == 'string') {
-                var newOptions = { populate:[], filter:{} };
-                newOptions[pkList] = options.split(',');
-                options = newOptions;
-            }
+        //     // did they send us a csv string?
+        //     // eg: ****ByRenID('ren_id1, ren_id2, ..., ren_idN') :=>
+        //     if (typeof options == 'string') {
+        //         var newOptions = { populate:[], filter:{} };
+        //         newOptions[pkList] = options.split(',');
+        //         options = newOptions;
+        //     }
 
-            options[pkList] = options[pkList] || [];
+        //     // if no pkList values given, then default to null
+        //     if (typeof options[pkList] == 'undefined') options[pkList] = null;
             
 
-            // make sure populate is valid.
-            options.populate = options.populate || [];
+        //     // make sure populate is valid.
+        //     options.populate = options.populate || [];
 
-            // make sure there is a filter value:
-            options.filter = options.filter || {};
+        //     // make sure there is a filter value:
+        //     options.filter = options.filter || {};
 
 
-            return options;
-        },
+        //     return options;
+        // },
 
 
 
@@ -260,7 +441,7 @@ console.log(err);
             //// 
             //// do some error checking on our given options:
             ////
-            options = self._resolveOptions(options, 'guids');
+            options = LegacySystems._resolveOptions(options, 'guids');
 
 
             //// 
@@ -458,7 +639,6 @@ console.log(err);
 
 
 
-
                 // step 3.1: Use staffAccounts to pull Account History, localContributions, staffExpenditures
                 function(next){
 
@@ -565,7 +745,6 @@ console.log(err);
 
 
 
-
                 // step 4: compile data together:
                 function(next) {
 
@@ -653,7 +832,6 @@ console.log(err);
 
 
 
-
         peopleByGUID:function(options) {
             var dfd = AD.sal.Deferred();
 
@@ -661,11 +839,11 @@ console.log(err);
             //// 
             //// do some error checking on our given options:
             ////
-            options = this._resolveOptions(options, 'guids');
+            options = LegacySystems._resolveOptions(options, 'guids');
 
 
             var filter = options.filter;
-            if (options.guids.length > 0) {
+            if (options.guids) {
                 if (filter.ren_guid) {
                     AD.log('<yellow><bold>warn:</bold></yellow> possible ren_guid conflict in call to peopleByGUID(), options:', options);
                     AD.log('... options.guids takes precedence');
@@ -721,12 +899,12 @@ console.log(err);
             //// 
             //// do some error checking on our given options:
             ////
-            options = self._resolveOptions(options, 'nssrenids');
+            options = LegacySystems._resolveOptions(options, 'nssrenids');
 
 
             // prepare our filter:
             var filter = options.filter;
-            if (options.nssrenids.length > 0) {
+            if (options.nssrenids) {
                 if (filter.nssren_id) {
                     AD.log('<yellow><bold>warn:</bold></yellow> possible nssren_id conflict in call to payrollTransactionsByNSRenID(), options:', options);
                     AD.log('... options.familyids takes precedence');
@@ -777,11 +955,11 @@ console.log(err);
             //// 
             //// do some error checking on our given options:
             ////
-            options = this._resolveOptions(options, 'guids');
+            options = LegacySystems._resolveOptions(options, 'guids');
 
 
             var filter = {};
-            if (options.guids.length > 0) {
+            if (options.guids) {
                 filter.ren_guid = options.guids;
             }
 
@@ -816,7 +994,6 @@ console.log(err);
                 
             });
             return dfd;
-
 
         },
 
@@ -1300,7 +1477,7 @@ var arrayOfUnique = function(field, list) {
         }
     })
     var uniqueResults = [];
-    for (var r in results) uniqueResults.push(r);
+    for (var r in result) uniqueResults.push(r);
     return uniqueResults;
 }
 
