@@ -748,11 +748,15 @@ listRenIDLookups.forEach(applyRenIDLookup);
 
 var arrayOf = function(field, list) {
     var result = [];
-    list.forEach(function(entry){
-        if (entry[field]){
-            result.push(entry[field]);
-        }
-    })
+
+    // make sure list is an array of length > 0
+    if ((list) && (list.length)) {
+        list.forEach(function(entry){
+            if (entry[field]){
+                result.push(entry[field]);
+            }
+        })
+    }
     return result;
 }
 
@@ -762,13 +766,17 @@ var arrayOf = function(field, list) {
 
 var toHash = function(field, list) {
     var result = {};
-    list.forEach(function(entry){
-        if (entry[field]){
-            if (typeof result[entry[field]] == 'undefined') {
-                result[entry[field]] = [];
+
+    // make sure list is an array of length > 0
+    if ((list) && (list.length)) {
+        list.forEach(function(entry){
+            if (entry[field]){
+                if (typeof result[entry[field]] == 'undefined') {
+                    result[entry[field]] = [];
+                }
+                result[entry[field]].push(entry);
             }
-            result[entry[field]].push(entry);
-        }
-    })
+        })
+    }
     return result;
 }
