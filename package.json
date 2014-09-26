@@ -1,6 +1,6 @@
 {
   "name": "legacy_systems",
-  "version": "0.1.0",
+  "version": "0.1.2",
   "description": "(plugin) An interface to our legacy system data.",
   "main": "module.js",
   "directories": {

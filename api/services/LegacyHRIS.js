@@ -157,7 +157,7 @@ module.exports= {
 
 
             // if guids are provided, just add that to filter now:
-            if (options.guids.length > 0) {
+            if (options.guids) {
                 filter.ren_guid = options.guids;
             }
 
@@ -595,7 +595,7 @@ var createLookups = function( resource, idListKey, idKey, fnKeyID, fnKeyGUID) {
 
 
     module.exports[fnKeyID] = function(options){
-AD.log('... pkLookup(): resource['+resource+'] idListKey['+idListKey+'] idKey['+idKey+'] fnKeyID['+fnKeyID+'] fnKeyGUID['+fnKeyGUID+']');
+// AD.log('... pkLookup(): resource['+resource+'] idListKey['+idListKey+'] idKey['+idKey+'] fnKeyID['+fnKeyID+'] fnKeyGUID['+fnKeyGUID+']');
 
         var dfd = AD.sal.Deferred();
         var self = this;
@@ -659,7 +659,7 @@ AD.log('... pkLookup(): resource['+resource+'] idListKey['+idListKey+'] idKey['+
      *  @return [array] 
      */
     module.exports[fnKeyGUID] = function(options){
-AD.log('... guidLookup(): resource['+resource+'] idListKey['+idListKey+'] idKey['+idKey+'] fnKeyID['+fnKeyID+'] fnKeyGUID['+fnKeyGUID+']');
+// AD.log('... guidLookup(): resource['+resource+'] idListKey['+idListKey+'] idKey['+idKey+'] fnKeyID['+fnKeyID+'] fnKeyGUID['+fnKeyGUID+']');
         var dfd = AD.sal.Deferred();
         var self = this;
 
@@ -748,11 +748,15 @@ listRenIDLookups.forEach(applyRenIDLookup);
 
 var arrayOf = function(field, list) {
     var result = [];
-    list.forEach(function(entry){
-        if (entry[field]){
-            result.push(entry[field]);
-        }
-    })
+
+    // make sure list is an array of length > 0
+    if ((list) && (list.length)) {
+        list.forEach(function(entry){
+            if (entry[field]){
+                result.push(entry[field]);
+            }
+        })
+    }
     return result;
 }
 
@@ -762,13 +766,17 @@ var arrayOf = function(field, list) {
 
 var toHash = function(field, list) {
     var result = {};
-    list.forEach(function(entry){
-        if (entry[field]){
-            if (typeof result[entry[field]] == 'undefined') {
-                result[entry[field]] = [];
+
+    // make sure list is an array of length > 0
+    if ((list) && (list.length)) {
+        list.forEach(function(entry){
+            if (entry[field]){
+                if (typeof result[entry[field]] == 'undefined') {
+                    result[entry[field]] = [];
+                }
+                result[entry[field]].push(entry);
             }
-            result[entry[field]].push(entry);
-        }
-    })
+        })
+    }
     return result;
 }
