@@ -750,7 +750,7 @@ var arrayOf = function(field, list) {
     var result = [];
 
     // make sure list is an array of length > 0
-    if (list.length) {
+    if ((list) && (list.length)) {
         list.forEach(function(entry){
             if (entry[field]){
                 result.push(entry[field]);
@@ -768,7 +768,7 @@ var toHash = function(field, list) {
     var result = {};
 
     // make sure list is an array of length > 0
-    if (list.length) {
+    if ((list) && (list.length)) {
         list.forEach(function(entry){
             if (entry[field]){
                 if (typeof result[entry[field]] == 'undefined') {
