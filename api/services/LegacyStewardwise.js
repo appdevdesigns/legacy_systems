@@ -233,9 +233,9 @@ console.log(err);
          *          avgAccountBal   : The average of staff's last 12 account balances
          *          monthsInDeficit : The # months in last 12 months that account balance < 0
          *          avgLocalContrib : The net average change in account (+ or -) from local sources
-         *          localPercent    : The % that avgLocalContrib makes up of current salary
+         *          localPercent    : The % that avgLocalContrib makes up of avg expenditure
          *          avgForeignContrib : The net average change in account (+ or -) from foreign sources
-         *          foreignPercent  : The % that avgForeignContrib makes up of current salary
+         *          foreignPercent  : The % that avgForeignContrib makes up of avg expenditure
          *          monthsTilDeficit: estimate of how many more months until an account goes negative                       
          *          phone           : The staff's current phone (mobile)
          *          email           : The staff's current secure email address
@@ -597,13 +597,14 @@ console.log(err);
 
                             clone.monthsInDeficit = Helper.monthsInDeficit(accountHistoryHash[guid], nssRen.nssren_balancePeriod);
 
+                            clone.avgExpenditure = Helper.averageStaffExpenditures( staffExpendituresHash[guid]);
+
                             clone.avgLocalContrib = Helper.averageContributions( localContributionsHash[guid] );
-                            clone.localPercent = Helper.getPercent(clone.avgLocalContrib, clone.baseSalary);
+                            clone.localPercent = Helper.getPercent(clone.avgLocalContrib, clone.avgExpenditure);
 
                             clone.avgForeignContrib = Helper.averageContributions( foreignContributionsHash[guid] );
-                            clone.foreignPercent = Helper.getPercent(clone.avgForeignContrib, clone.baseSalary);
+                            clone.foreignPercent = Helper.getPercent(clone.avgForeignContrib, clone.avgExpenditure);
 
-                            clone.avgExpenditure = Helper.averageStaffExpenditures( staffExpendituresHash[guid]);
 
 
 
