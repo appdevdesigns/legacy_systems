@@ -186,7 +186,6 @@ module.exports= {
                 }
                 
             })
-// AD.log('fieldsToPopulate: ', fieldsToPopulate);
 
 
 
@@ -202,7 +201,6 @@ module.exports= {
                 if (typeof populate == 'string') {
                     p.populate(populate);
                 } else {
-// AD.log('... populating by filter key['+populate.key+'] and filter:', populate.filter);
                     p.populate(populate.key, populate.filter);
                 }
             })
@@ -238,11 +236,12 @@ module.exports= {
                         remapWarnings[processMe.key] = false;
 
 
-                        // if we have a corresponding ...ByGUID():
+                        // if we have a corresponding "<fieldname>ByGUID()" function defined:
                         var fnKeyGUID = processMe.key+'ByGUID';
                         var fnKeyID = processMe.key+'ByRenID';
                         var fnKeyFID = processMe.key+'ByFamID';
-
+                        
+                        // Processing by ren_id
                         if (self[fnKeyID]) {
 
                             if (listIDs == null) listIDs = arrayOf('ren_id', listRen);
@@ -288,7 +287,9 @@ module.exports= {
 
                             })
 
-                        } else if (self[fnKeyFID]) {
+                        } 
+                        // Processing by family_id
+                        else if (self[fnKeyFID]) {
 
                             if (listFamIDs == null) {
                                 listFamIDs = arrayOf('family_id', listRen);
@@ -344,7 +345,9 @@ module.exports= {
 
                             })
 
-                        } else if (self[fnKeyGUID]) {
+                        } 
+                        // Processing by ren_guid
+                        else if (self[fnKeyGUID]) {
 
                             if (listGUIDs == null) listGUIDs = arrayOf('ren_guid', listRen);
 
@@ -456,12 +459,19 @@ module.exports= {
             // then lookup LHRISAccount.find(family_id:listFamilyIDs);
             LHRISAccount.find(filter)
             .fail(function(err){
-
+                
                 AD.log.error('... staffAccountByFamID() failed LHRISAccount lookup: filter:', filter, '\n err:', err);
                 dfd.reject(err);
             })
             .done(function(listAccounts){
-
+                for (var i=0; i<listAccounts.length; i++) {
+                    // If account number is in the Narnia account format 
+                    // (e.g. 1-0-0345) then truncate to just the final 4 digits
+                    var narniaAccount = listAccounts[i].account_number.match(/^\d-\d-(\d\d\d\d)$/);
+                    if (narniaAccount) {
+                        listAccounts[i].account_number = narniaAccount[1];
+                    }
+                }
                 dfd.resolve(listAccounts);
 
             })
