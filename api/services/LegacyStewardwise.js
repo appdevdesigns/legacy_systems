@@ -284,8 +284,9 @@ console.log(err);
 
 
             //// Secondary Data Sources  (depends on info from Primary's )
-            var listNSRenIDs = null;        // an [ ren_id, ren_id, ... ] gathered from swRenInfo
+            var listNSRenIDs = null;        // an [ nssren_id, nssren_id, ... ] gathered from swRenInfo
             var listHRISFamilyIDs = null;   // an [ family_id, family_id, ... ] gathered from hrisRen data
+            var listHRISRenIDs = null;      // an [ ren_id, ren_id, ... ] gathered from hrisRen data
             var staffAccountHash = null;    // the primary Staff Accounts for these people { ren_guid: {hrisaccount}}  
             var payrollTransactionsHash = null;         // all the payroll transactions for these people { ren_guid: [{payrollTransaction}]}
 
@@ -363,18 +364,13 @@ console.log(err);
 
                             hrisRenHash = toHashUnique('ren_guid', results.hrisRenInfo);
                             listHRISFamilyIDs = arrayOf('family_id', results.hrisRenInfo);
+                            listHRISRenIDs = arrayOf('ren_id', results.hrisRenInfo);
 
-// AD.log('... swRenInfo:', swRenInfo);
-// AD.log('... hrisRenInfo:', hrisRenHash);
-
-                            
                             var mapTID = toHashUnique('territory_id', results.territories);
                             territoryHash = {};
                             results.swRenInfo.forEach(function(nssren){
                                 territoryHash[nssren.ren_guid] = mapTID[nssren.territory_id];
                             })
-
-// AD.log('... territoryHash:',territoryHash);
 
                             next();
 
@@ -399,15 +395,16 @@ console.log(err);
                     var mapNSRenIDToGUID = {};
                     for (var guid in swRenHash) {
                         var entry = swRenHash[guid];
-                        var renID = entry.nssren_id;
-                        mapNSRenIDToGUID[renID] = guid;
+                        var nssrenID = entry.nssren_id;
+                        mapNSRenIDToGUID[nssrenID] = guid;
                     }
 
 
                     async.parallel({
 
                         staffAccountInfo: function(cb) {
-                            LegacyHRIS.staffAccountsByFamID({familyids: listHRISFamilyIDs, filter:{ account_isprimary: 1 } })
+                            //LegacyHRIS.staffAccountsByFamID({familyids: listHRISFamilyIDs, filter:{ account_isprimary: 1 } })
+                            LegacyHRIS.staffAccountsByRenID({renids: listHRISRenIDs, filter:{} })
                                 .fail(function(err){ cb(err); })
                                 .done(function(listAccounts){
 
