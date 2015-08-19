@@ -445,7 +445,7 @@ module.exports= {
             // prepare the search filter
             var filter = options.filter;
             
-            if (options.familyids.length > 0) {
+            if (options.renids && options.renids.length > 0) {
                 if (filter.ren_id) {
                     AD.log('<yellow><bold>warn:</bold></yellow> possible ren_id conflict in call to staffAccountsByRenID(), options:', options);
                     AD.log('... options.renids takes precedence');
