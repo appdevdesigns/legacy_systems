@@ -440,7 +440,7 @@ module.exports= {
             var dfd = AD.sal.Deferred();
             var self = this;
             
-            options = self._resolveOPtions(options, 'renids');
+            options = self._resolveOptions(options, 'renids');
             
             // prepare the search filter
             var filter = options.filter;
