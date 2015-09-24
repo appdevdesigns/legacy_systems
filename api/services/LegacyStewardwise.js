@@ -414,9 +414,9 @@ Log('allAccounts:', allAccounts);
          *          avgAccountBal   : The average of staff's last 12 account balances
          *          monthsInDeficit : The # months in last 12 months that account balance < 0
          *          avgLocalContrib : The net average change in account (+ or -) from local sources
-         *          localPercent    : The % that avgLocalContrib makes up of current salary
+         *          localPercent    : The % that avgLocalContrib makes up of avg expenditure
          *          avgForeignContrib : The net average change in account (+ or -) from foreign sources
-         *          foreignPercent  : The % that avgForeignContrib makes up of current salary
+         *          foreignPercent  : The % that avgForeignContrib makes up of avg expenditure
          *          monthsTilDeficit: estimate of how many more months until an account goes negative                       
          *          phone           : The staff's current phone (mobile)
          *          email           : The staff's current secure email address
@@ -465,8 +465,9 @@ Log('allAccounts:', allAccounts);
 
 
             //// Secondary Data Sources  (depends on info from Primary's )
-            var listNSRenIDs = null;        // an [ ren_id, ren_id, ... ] gathered from swRenInfo
+            var listNSRenIDs = null;        // an [ nssren_id, nssren_id, ... ] gathered from swRenInfo
             var listHRISFamilyIDs = null;   // an [ family_id, family_id, ... ] gathered from hrisRen data
+            var listHRISRenIDs = null;      // an [ ren_id, ren_id, ... ] gathered from hrisRen data
             var staffAccountHash = null;    // the primary Staff Accounts for these people { ren_guid: {hrisaccount}}  
             var payrollTransactionsHash = null;         // all the payroll transactions for these people { ren_guid: [{payrollTransaction}]}
 
@@ -544,18 +545,13 @@ Log('allAccounts:', allAccounts);
 
                             hrisRenHash = toHashUnique('ren_guid', results.hrisRenInfo);
                             listHRISFamilyIDs = arrayOf('family_id', results.hrisRenInfo);
+                            listHRISRenIDs = arrayOf('ren_id', results.hrisRenInfo);
 
-// AD.log('... swRenInfo:', swRenInfo);
-// AD.log('... hrisRenInfo:', hrisRenHash);
-
-                            
                             var mapTID = toHashUnique('territory_id', results.territories);
                             territoryHash = {};
                             results.swRenInfo.forEach(function(nssren){
                                 territoryHash[nssren.ren_guid] = mapTID[nssren.territory_id];
                             })
-
-// AD.log('... territoryHash:',territoryHash);
 
                             next();
 
@@ -580,15 +576,16 @@ Log('allAccounts:', allAccounts);
                     var mapNSRenIDToGUID = {};
                     for (var guid in swRenHash) {
                         var entry = swRenHash[guid];
-                        var renID = entry.nssren_id;
-                        mapNSRenIDToGUID[renID] = guid;
+                        var nssrenID = entry.nssren_id;
+                        mapNSRenIDToGUID[nssrenID] = guid;
                     }
 
 
                     async.parallel({
 
                         staffAccountInfo: function(cb) {
-                            LegacyHRIS.staffAccountsByFamID({familyids: listHRISFamilyIDs, filter:{ account_isprimary: 1 } })
+                            //LegacyHRIS.staffAccountsByFamID({familyids: listHRISFamilyIDs, filter:{ account_isprimary: 1 } })
+                            LegacyHRIS.staffAccountsByRenID({renids: listHRISRenIDs, filter:{} })
                                 .fail(function(err){ cb(err); })
                                 .done(function(listAccounts){
 
@@ -776,13 +773,14 @@ Log('allAccounts:', allAccounts);
 
                             clone.monthsInDeficit = Helper.monthsInDeficit(accountHistoryHash[guid], nssRen.nssren_balancePeriod);
 
+                            clone.avgExpenditure = Helper.averageStaffExpenditures( staffExpendituresHash[guid]);
+
                             clone.avgLocalContrib = Helper.averageContributions( localContributionsHash[guid] );
-                            clone.localPercent = Helper.getPercent(clone.avgLocalContrib, clone.baseSalary);
+                            clone.localPercent = Helper.getPercent(clone.avgLocalContrib, clone.avgExpenditure);
 
                             clone.avgForeignContrib = Helper.averageContributions( foreignContributionsHash[guid] );
-                            clone.foreignPercent = Helper.getPercent(clone.avgForeignContrib, clone.baseSalary);
+                            clone.foreignPercent = Helper.getPercent(clone.avgForeignContrib, clone.avgExpenditure);
 
-                            clone.avgExpenditure = Helper.averageStaffExpenditures( staffExpendituresHash[guid]);
 
 
 

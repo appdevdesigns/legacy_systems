@@ -186,7 +186,6 @@ module.exports= {
                 }
                 
             })
-// AD.log('fieldsToPopulate: ', fieldsToPopulate);
 
 
 
@@ -202,7 +201,6 @@ module.exports= {
                 if (typeof populate == 'string') {
                     p.populate(populate);
                 } else {
-// AD.log('... populating by filter key['+populate.key+'] and filter:', populate.filter);
                     p.populate(populate.key, populate.filter);
                 }
             })
@@ -238,11 +236,13 @@ module.exports= {
                         remapWarnings[processMe.key] = false;
 
 
-                        // if we have a corresponding ...ByGUID():
-                        var fnKeyGUID = processMe.key+'ByGUID';
-                        var fnKeyID = processMe.key+'ByRenID';
-                        var fnKeyFID = processMe.key+'ByFamID';
-
+                        // Check if we have a corresponding "<fieldname>ByGUID()" function defined.
+                        // Only one will be used, in this order of priority.
+                        var fnKeyID = processMe.key+'ByRenID';  // #1
+                        var fnKeyFID = processMe.key+'ByFamID'; // #2
+                        var fnKeyGUID = processMe.key+'ByGUID'; // #3
+                        
+                        // Processing by ren_id
                         if (self[fnKeyID]) {
 
                             if (listIDs == null) listIDs = arrayOf('ren_id', listRen);
@@ -288,7 +288,9 @@ module.exports= {
 
                             })
 
-                        } else if (self[fnKeyFID]) {
+                        } 
+                        // Processing by family_id
+                        else if (self[fnKeyFID]) {
 
                             if (listFamIDs == null) {
                                 listFamIDs = arrayOf('family_id', listRen);
@@ -344,7 +346,9 @@ module.exports= {
 
                             })
 
-                        } else if (self[fnKeyGUID]) {
+                        } 
+                        // Processing by ren_guid
+                        else if (self[fnKeyGUID]) {
 
                             if (listGUIDs == null) listGUIDs = arrayOf('ren_guid', listRen);
 
@@ -418,6 +422,65 @@ module.exports= {
         //  StaffAccount  Lookups
         //--------------------------------------------------------------------
         /**
+         *  @function staffAccountsByRenID
+         *
+         *  Return an array of HRIS Accounts who have one of the given RenIDs.
+         *
+         *  @param [object] options     : list of options
+         *                  options.renids : list of family_id values
+         *                  options.populate : list of related fields to populate results with.
+         *                      each entry can either be a:
+         *                          'string' : 'email' : populate('email')
+         *                          'object' : {key:'email', filter:{email_issecure:1}}
+         *                  options.filter   : additional filter for who to pull out
+         *
+         *  @return [array] 
+         */
+        staffAccountsByRenID: function(options) {
+            var dfd = AD.sal.Deferred();
+            var self = this;
+            
+            options = self._resolveOptions(options, 'renids');
+            
+            // prepare the search filter
+            var filter = options.filter;
+            
+            if (options.renids && options.renids.length > 0) {
+                if (filter.ren_id) {
+                    AD.log('<yellow><bold>warn:</bold></yellow> possible ren_id conflict in call to staffAccountsByRenID(), options:', options);
+                    AD.log('... options.renids takes precedence');
+                }
+                filter.ren_id = options.renids;
+            }
+            
+            LHRISWorker.find(filter)
+            .populate('account_id')
+            .fail(function(err){
+                AD.log.error('... staffAccountByRenID() failed LHRISWorker lookup: filter:', filter, '\nerr:', err);
+                dfd.reject(err);
+            })
+            .done(function(listWorkers){
+                var listAccounts = [];
+                // Use the account sub object and discard the rest of the worker info
+                for (var i=0; i<listWorkers.length; i++) {
+                    var accountObj = listWorkers[i].account_id;
+                    // If account number is in the Narnia account format 
+                    // (e.g. 1-0-0345) then truncate to just the final 4 digits
+                    var narniaAccount = accountObj.account_number.match(/^\d-\d-(\d\d\d\d)$/);
+                    if (narniaAccount) {
+                        accountObj.account_number = narniaAccount[1];
+                    }
+                    listAccounts[i] = accountObj;
+                }
+
+                dfd.resolve(listAccounts);
+            });
+            
+            return dfd;
+        },
+
+
+        /**
          *  @function staffAccountsByFamID
          *
          *  Return an array of HRIS Accounts who have one of the given FamilyIDs.
@@ -456,12 +519,19 @@ module.exports= {
             // then lookup LHRISAccount.find(family_id:listFamilyIDs);
             LHRISAccount.find(filter)
             .fail(function(err){
-
+                
                 AD.log.error('... staffAccountByFamID() failed LHRISAccount lookup: filter:', filter, '\n err:', err);
                 dfd.reject(err);
             })
             .done(function(listAccounts){
-
+                for (var i=0; i<listAccounts.length; i++) {
+                    // If account number is in the Narnia account format 
+                    // (e.g. 1-0-0345) then truncate to just the final 4 digits
+                    var narniaAccount = listAccounts[i].account_number.match(/^\d-\d-(\d\d\d\d)$/);
+                    if (narniaAccount) {
+                        listAccounts[i].account_number = narniaAccount[1];
+                    }
+                }
                 dfd.resolve(listAccounts);
 
             })
