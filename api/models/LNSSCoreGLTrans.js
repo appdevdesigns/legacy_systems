@@ -5,6 +5,8 @@
 * @docs        :: http://sailsjs.org/#!documentation/models
 */
 
+var AD = require('ad-utils');
+
 module.exports = {
 
     // tableName:"lnss_core_gltran",
@@ -17,7 +19,6 @@ module.exports = {
 
 
     connection:"legacy_stewardwise",
-// connection:"nss",
 
 
 
@@ -94,6 +95,208 @@ module.exports = {
         }, 
 
 
+    },
+    
+    
+    ////////////////////////////
+    // Model class methods
+    ////////////////////////////
+    
+    /**
+     * Average amount of funds leaving the account per month, over the past
+     * twelve months.
+     *
+     * {
+     *    <staff account>: <avgExpenditure>,
+     *    ...
+     * }
+     *
+     * @param string startingPeriod
+     *      The gltran_perpost period from 12 months ago.
+     *      Format: YYYYMM
+     * @return Deferred
+     */
+    avgMonthlyExpenditure: function(startingPeriod) {
+        var dfd = AD.sal.Deferred();
+        
+        LNSSCoreGLTrans.query(" \
+            SELECT \
+                gltran_subacctnum AS account, \
+                ROUND(SUM(gltran_dramt) / 12) AS avgExpenditure \
+            FROM \
+                nss_core_gltran \
+            WHERE \
+                gltran_perpost > '" + startingPeriod + "' \
+                AND gltran_dramt > 0 \
+                AND gltran_subacctnum LIKE '10____' \
+            GROUP BY \
+                gltran_subacctnum \
+        ", function(err, results) {
+            if (err) {
+                dfd.reject(err);
+            } else {
+                var resultsByAccount = {};
+                for (var i=0; i<results.length; i++) {
+                    var account = results[i].account;
+                    var avgExpenditure = results[i].avgExpenditure;
+                    resultsByAccount[account] = avgExpenditure;
+                }
+                dfd.resolve(resultsByAccount);
+            }
+        });
+        
+        return dfd;
+    },
+    
+    
+    /**
+     * The average amount of funds added from local sources per month,
+     * over the past twelve months.
+     *
+     * {
+     *    <staff account>: <avgLocalContrib>,
+     *    ...
+     * }
+     *
+     * @param string startingPeriod
+     *      The gltran_perpost period from 12 months ago.
+     *      Format: YYYYMM
+     * @return Deferred
+     */
+    avgLocalContrib: function(startingPeriod) {
+        var dfd = AD.sal.Deferred();
+        
+        LNSSCoreGLTrans.query(" \
+            SELECT \
+                gltran_subacctnum AS account, \
+                ROUND((SUM(gltran_dramt) + SUM(gltran_cramt)) / 12) AS avgLocalContrib \
+            FROM \
+                nss_core_gltran \
+            WHERE \
+                gltran_perpost > '" + startingPeriod + "' \
+                AND gltran_acctnum IN ('4000', '4010') \
+                AND gltran_subacctnum LIKE '10____' \
+            GROUP BY \
+                gltran_subacctnum \
+        ", function(err, results) {
+            if (err) {
+                dfd.reject(err);
+            } else {
+                var resultsByAccount = {};
+                for (var i=0; i<results.length; i++) {
+                    var account = results[i].account;
+                    var avgLocalContrib = results[i].avgLocalContrib;
+                    resultsByAccount[account] = avgLocalContrib;
+                }
+                dfd.resolve(resultsByAccount);
+            }
+        });
+        
+        return dfd;
+    },
+    
+    
+    /**
+     * The average amount of funds added from foreign sources per month,
+     * over the past twelve months.
+     *
+     * {
+     *    <staff account>: <avgSalary>,
+     *    ...
+     * }
+     *
+     * @param string startingPeriod
+     *      The gltran_perpost period from 12 months ago.
+     *      Format: YYYYMM
+     * @return Deferred
+     */
+    avgForeignContrib: function(startingPeriod) {
+        var dfd = AD.sal.Deferred();
+        
+        // gltran_acctnum meanings:
+        //  7000 - salary, additional salary, short pay, reduce ytd salary paid
+        //  1200 - deduction
+        //  1250 - salary advance, clear salary advance
+        //  1210 - correction to ytd salary
+        // so i guess we just count the 7000 transactions?
+        
+        // Total up all the base salary, adjustment credits and debits
+        // and divide by 12.
+        LNSSCoreGLTrans.query(" \
+            SELECT \
+                gltran_subacctnum AS account, \
+                ROUND((SUM(gltran_dramt) + SUM(gltran_cramt)) / 12) AS avgSalary \
+            FROM \
+                nss_core_gltran \
+            WHERE \
+                gltran_perpost > '" + startingPeriod + "' \
+                AND gltran_acctnum IN ('7000') \
+                AND gltran_subacctnum LIKE '10____' \
+            GROUP BY \
+                gltran_subacctnum \
+        ", function(err, results) {
+            if (err) {
+                dfd.reject(err);
+            } else {
+                var resultsByAccount = {};
+                for (var i=0; i<results.length; i++) {
+                    var account = results[i].account;
+                    var avgSalary = results[i].avgSalary;
+                    resultsByAccount[account] = avgSalary;
+                }
+                dfd.resolve(resultsByAccount);
+            }
+        });
+        
+        return dfd;
+    },
+    
+    
+    /**
+     * The average amount of monthly salary over the past 12 months.
+     *
+     * {
+     *    <staff account>: <avgSalary>,
+     *    ...
+     * }
+     *
+     * @param string startingPeriod
+     *      The gltran_perpost period from 12 months ago.
+     *      Format: YYYYMM
+     * @return Deferred
+     */
+    avgSalary: function(startingPeriod) {
+        var dfd = AD.sal.Deferred();
+        
+        LNSSCoreGLTrans.query(" \
+            SELECT \
+                gltran_subacctnum AS account, \
+                ROUND((SUM(gltran_dramt) + SUM(gltran_cramt)) / 12) AS avgForeignContrib \
+            FROM \
+                nss_core_gltran \
+            WHERE \
+                gltran_perpost > '" + startingPeriod + "' \
+                AND gltran_acctnum = '5000' \
+                AND gltran_subacctnum LIKE '10____' \
+            GROUP BY \
+                gltran_subacctnum \
+        ", function(err, results) {
+            if (err) {
+                dfd.reject(err);
+            } else {
+                var resultsByAccount = {};
+                for (var i=0; i<results.length; i++) {
+                    var account = results[i].account;
+                    var avgForeignContrib = results[i].avgForeignContrib;
+                    resultsByAccount[account] = avgForeignContrib;
+                }
+                dfd.resolve(resultsByAccount);
+            }
+        });
+    
+        return dfd;
     }
+    
+    
 };
 

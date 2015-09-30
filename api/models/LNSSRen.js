@@ -5,6 +5,8 @@
 * @docs        :: http://sailsjs.org/#!documentation/models
 */
 
+var AD = require('ad-utils');
+
 module.exports = {
 
     tableName:"nss_core_ren",
@@ -146,12 +148,14 @@ module.exports = {
             type : "string",
             size : 7
         }, 
-
+        
+        /*
         territory_id : {
             type : "integer",
             size : 11,
             defaultsTo : "0"
         }, 
+        */
 
         nssren_monthsdonations : {
             type : "float",
@@ -191,8 +195,150 @@ module.exports = {
         ren_guid : {
             type : "text"
         }, 
+        
+        territories: {
+            collection: 'LNSSRenTerritory',
+            via: 'nssren_id'
+        }
 
-
+    },
+    
+    
+    ////////////////////////////
+    // Model class methods
+    ////////////////////////////
+    
+    /**
+     * Stewardwise & HRIS info of all active staff
+     * {
+     *    [ 
+     *      {
+     *        "name": <string>,
+     *        "chineseName": <string>,
+     *        "accountNum": <string>,
+     *        "baseSalary": <integer>,  // ytdBalance
+     *        "email": <string>,        // secure email
+     *        "phone": <string>,        // (H), (O), (M), joined by ','
+     *        "territory": <string>,    // multiple territories joined by ','
+     *        "poc": <boolean>,         // is family point of contact?
+     *        "region": <string>,       // derived from territory desc
+     *        "regionHRIS": <string>,   // derived from HRIS team location
+     *        "location_id": <integer>,
+     *        "ren_guid": <string>
+     *      },
+     *      ...
+     *    ]
+     * }
+     *
+     * @return Deferred
+     */
+    staffInfo: function() {
+        var dfd = AD.sal.Deferred();
+        var hris = sails.config.connections.legacy_hris.database;
+        if (!hris) {
+            throw new Error('legacy_hris connection not defined in the settings');
+        }
+        
+        LNSSRen.query(" \
+            SELECT \
+                CONCAT( \
+                    r.ren_surname, ', ', r.ren_givenname, \
+                    ' (', r.ren_preferredname, ')' \
+                ) AS name, \
+                r.ren_namecharacters AS chineseName, \
+                REPLACE(a.account_number, '-', '') AS accountNum, \
+                nr.nssren_salaryAmount AS baseSalary, \
+                nr.nssren_ytdBalance AS accountBal, \
+                e.email_address AS email, \
+                GROUP_CONCAT( \
+                    p.phone_number, ' (', \
+                    SUBSTRING(ptt.phonetype_label, 1, 1), ')' \
+                    SEPARATOR ', ' \
+                ) AS phone, \
+                SUBSTRING( \
+                    t.territory_desc, 1, LOCATE('-', t.territory_desc)-1 \
+                ) AS region, \
+                GROUP_CONCAT(t.territory_desc SEPARATOR ', ') AS territory, \
+                r.ren_isfamilypoc AS poc, \
+                xtl.location_id, \
+                nr.ren_guid \
+            \
+            FROM \
+                "+hris+".hris_ren_data AS r \
+                JOIN nss_core_ren AS nr \
+                    ON nr.ren_guid = r.ren_guid \
+                    AND nr.nssren_isActive = 1 \
+                \
+                JOIN "+hris+".hris_worker AS w \
+                    ON r.ren_id = w.ren_id \
+                JOIN "+hris+".hris_account AS a \
+                    ON w.account_id = a.account_id \
+                \
+                JOIN nss_core_renterritory AS rt \
+                    ON nr.nssren_id = rt.nssren_id \
+                JOIN nss_core_territory AS t \
+                    ON rt.territory_id = t.territory_id \
+                \
+                LEFT JOIN "+hris+".hris_phone_data AS p \
+                    ON r.ren_id = p.ren_id \
+                LEFT JOIN "+hris+".hris_phonetype_trans AS ptt \
+                    ON p.phonetype_id = ptt.phonetype_id \
+                    AND ptt.language_code = 'en' \
+                LEFT JOIN "+hris+".hris_email AS e \
+                    ON r.ren_id = e.ren_id \
+                    AND e.email_issecure = 1 \
+                \
+                LEFT JOIN "+hris+".hris_assignment AS asgn \
+                    ON r.ren_id = asgn.ren_id \
+                    AND asgn.assignment_isprimary = 1 \
+                LEFT JOIN "+hris+".hris_assign_team_data AS asgn_t \
+                    ON asgn.team_id = asgn_t.team_id \
+                LEFT JOIN "+hris+".hris_xref_team_location AS xtl \
+                    ON asgn.team_id = xtl.team_id \
+            GROUP BY \
+                r.ren_id \
+        ", function(err, staff) {
+            if (err) {
+                dfd.reject(err);
+            } else {
+                LHRISAssignLocation.mapToRegion()
+                .fail(dfd.reject)
+                .done(function(locations, regions) {
+                    // Merge HRIS team region into the staff entries
+                    for (var i=0; i<staff.length; i++) {
+                        var locationID = staff[i].location_id;
+                        if (locations[locationID]) {
+                            var regionID = locations[locationID].region_location_id;
+                            var regionLabel = regions[regionID].name;
+                        } else {
+                            var regionLabel = 'none';
+                        }
+                        staff[i].regionHRIS = regionLabel;
+                    }
+                    dfd.resolve(staff);
+                });
+            }
+        });
+        
+        return dfd;
+    },
+    
+    
+    staffInfoByAccount: function() {
+        var dfd = AD.sal.Deferred();
+        
+        LNSSRen.staffInfo()
+        .fail(dfd.reject)
+        .done(function(list) {
+            var byAccount = {};
+            for (var i=0; i<list.length; i++) {
+                var account = parseInt(list[i].accountNum);
+                byAccount[account] = row;
+            }
+            dfd.resolve(byAccount);
+        });
+        
+        return dfd;
     }
 };
 
