@@ -495,7 +495,6 @@ Log('allAccounts:', allAccounts);
                     .then(function(twelveMonthsAgo){
                         fiscalDateInfo = twelveMonthsAgo.date;      
                         periodDateInfo = twelveMonthsAgo.period;
-// AD.log('... pulled fiscalDate['+fiscalDateInfo+'] and periodDate['+periodDateInfo+']');
                         next();
                     })
                 }, 
@@ -504,11 +503,14 @@ Log('allAccounts:', allAccounts);
 
                 // step 2: pull all the related Primary Data Sources (like LNSSRen, LHRISRen, etc... )
                 function(next) {
-
+                    
                     async.parallel({
 
                         swRenInfo:function(cb){ 
-                                LegacyStewardwise.peopleByGUID({ guids:options.guids })
+                                LegacyStewardwise.peopleByGUID({ 
+                                    guids:options.guids,
+                                    populate: [ 'territories' ]
+                                })
                                 .fail(function(err){ cb(err); })
                                 .done(function(listNSS) {
                                     cb(null, listNSS);
@@ -534,11 +536,11 @@ Log('allAccounts:', allAccounts);
                         
 
                     }, function(err, results) {
-
+                        
                         if (err) {
                             next(err);
                         } else {
-
+                            
                             swRenInfo = results.swRenInfo;
                             swRenHash = toHashUnique('ren_guid', results.swRenInfo);
                             listNSRenIDs = arrayOf('nssren_id', results.swRenInfo);
@@ -619,15 +621,8 @@ Log('allAccounts:', allAccounts);
                         if (err){
                             next(err);
                         } else {
-                        
                             staffAccountHash = toHashUnique('ren_guid', results.staffAccountInfo);
-// AD.log('... staffAccountHash:', staffAccountHash);
-
                             payrollTransactionsHash = toHash('ren_guid', results.payrollTransactions);
-// AD.log('... payrollTransactionsHash:', payrollTransactionsHash);
-// AD.log('... payrollTransactions:', results.payrollTransactions);
-
-
                             next();
                         }
 
@@ -667,7 +662,6 @@ Log('allAccounts:', allAccounts);
                         }, 
 
                         localContributions:function(cb){
-// AD.log('... listAccountNums:', listAccountNums);
                             LNSSCoreGLTrans.find({or: [
                                 {gltran_acctnum: 4000},
                                 {gltran_acctnum: 4010}
@@ -679,7 +673,6 @@ Log('allAccounts:', allAccounts);
                                 list.forEach(function(entry){
                                     entry.ren_guid = mapAccountToGUID[entry.gltran_subacctnum];
                                 })
-// AD.log('... list GLTrans:', list);
                                 cb(null, list);
                             });
                         },
@@ -694,7 +687,6 @@ Log('allAccounts:', allAccounts);
                                 list.forEach(function(entry){
                                     entry.ren_guid = mapAccountToGUID[entry.gltran_subacctnum];
                                 })
-// AD.log('... list foreign GLTrans:', list);
                                 cb(null, list);
                             });
 
@@ -715,7 +707,6 @@ Log('allAccounts:', allAccounts);
                                 list.forEach(function(entry){
                                     entry.ren_guid = mapAccountToGUID[entry.gltran_subacctnum];
                                 })
-// AD.log('... list expenditures GLTrans:', list);
                                 cb(null, list);
                             });
 
@@ -725,13 +716,9 @@ Log('allAccounts:', allAccounts);
 
 
                         accountHistoryHash = toHash('ren_guid', results.accountHistory);
-// AD.log('... accountHistoryHash:', accountHistoryHash);
                         localContributionsHash = toHash('ren_guid', results.localContributions);
-// AD.log('... localContributionsHash:', localContributionsHash);
                         foreignContributionsHash = toHash('ren_guid', results.foreignContributions);
-// AD.log('... foreignContributionsHash:', foreignContributionsHash);
                         staffExpendituresHash = toHash('ren_guid', results.staffExpenditures);
-// AD.log('... staffExpendituresHash:', staffExpendituresHash);
 
                         next();
                     });
@@ -818,7 +805,6 @@ Log('allAccounts:', allAccounts);
                 if (err) {
                     dfd.reject(err);
                 } else {
-// AD.log('... finalData:',finalData);
 
                     dfd.resolve(finalData);
                 }
@@ -850,8 +836,7 @@ Log('allAccounts:', allAccounts);
             }
 
             filter.nssren_isActive = 1;
-// AD.log('... filter:', filter);
-
+            
             LNSSRen.find(filter).sort('nssren_ytdBalance asc')
             .fail(function(err){
 
@@ -1051,7 +1036,6 @@ Log('allAccounts:', allAccounts);
                     dfd.reject(err);
                 })
                 .done(function(fiscalYear){
-// AD.log('... fiscalYear:',fiscalYear);                    
                     var glYear = fiscalYear[0].fiscalyear_glprefix;
                     var glPeriod = period[11].requestcutoff_period;
                     var glDate;
@@ -1272,18 +1256,14 @@ var Helper = {
 
     getMonthsTilDeficit:function(options) {
         var monthsTilDeficit = 1;
-// AD.log('... options:',options);
 
             //the account is currently in deficit
             if (options.accountBalance < 0){
                 return "1";
             }
 
-// AD.log('... calculating trend:');
-
             // Ed Graham's formula
             var accountTrend = options.avgContributions - options.avgExpenditures;
-// AD.log('... accountTrend:',accountTrend);
 
             if (accountTrend >= 0) {
                 monthsTilDeficit = 'NA';
@@ -1293,7 +1273,6 @@ var Helper = {
                     monthsTilDeficit = 'NA';
                 }
             }
-// AD.log('... monthsTilDeficit:',monthsTilDeficit);            
             /*
             //the account will never be in deficit since avgContributions > payroll or they are equal
             if (avgContributions > payroll || avgContributions == avgPayroll) {
@@ -1451,6 +1430,8 @@ var Helper = {
 }
 
 
+// Expose
+module.exports.getMonthsTilDeficit = Helper.getMonthsTilDeficit;
 
 
 

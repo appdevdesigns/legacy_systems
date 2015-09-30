@@ -76,8 +76,7 @@ module.exports = {
      *
      * Used by mapToRegion()
      *
-     * @return
-     *      Deferred
+     * @return Deferred
      */
     hierarchyList: function() {
         var dfd = AD.sal.Deferred();
@@ -176,7 +175,7 @@ module.exports = {
                 var row = list[i];
                 var locID = row.location_id;
                 
-                // Find the region that this location is a child of
+                // Find the region that this location belongs to
                 while (!regions[locID] && rollUps[locID]) {
                     locID = rollUps[locID];
                 }
@@ -184,7 +183,7 @@ module.exports = {
                 // Add the region to the row's data
                 locations[row.location_id].region_location_id = locID;
                 
-                // Add this location under that region
+                // Record this location under that region
                 if (regions[locID]) {
                     regions[locID].children.push( row.location_id );
                 }
