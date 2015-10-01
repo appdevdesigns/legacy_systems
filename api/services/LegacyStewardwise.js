@@ -241,14 +241,11 @@ Log('allAccounts:', allAccounts);
                     // now simply find all NSSRen:
 
                     var filter = options.filter || {};
-// AD.log('... listTerritoryIDs:', listTerritoryIDs);
                     if( listTerritoryIDs ) {
                         filter.territory_id = listTerritoryIDs;
                     }
 
                     if (typeof filter.nssren_isActive == 'undefined')  filter.nssren_isActive = { '!': 0 };
-
-// AD.log('... filter:', filter);
 
                     LNSSRen.find(filter)
                     .fail(function(err){
@@ -897,7 +894,6 @@ Log('allAccounts:', allAccounts);
 
 
             // then lookup LNSSPayrollTransactions.find( filter );
-// AD.log('... LNSSPayrollTransactions.find()  filter:', filter);
             LNSSPayrollTransactions.find(filter)
             .fail(function(err){
 
@@ -905,7 +901,6 @@ Log('allAccounts:', allAccounts);
                 dfd.reject(err);
             })
             .done(function(list){
-// AD.log('... LNSSPayrollTransactions.find() :', list);
                 dfd.resolve(list);
 
             })
@@ -1096,7 +1091,6 @@ var Helper = {
         var balancesArray = [];
 
         var balanceHash = toHashUnique('accounthistory_fiscalyear', balances);
-// AD.log('... balanceHash:',balanceHash);
 
         var thisYear = period.split("-")[0];
         var thisYearRow = balanceHash[thisYear];
@@ -1149,9 +1143,6 @@ var Helper = {
         //Take the rows and build an array of account balance values
         var balancesArray = Helper.buildBalanceArray(balances, period);  //[];
         
-
-// AD.log('... balancesArray:', balancesArray);
-
 
         var year = period.split("-")[0];
         var month = period.split("-")[1];

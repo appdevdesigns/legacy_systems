@@ -18,7 +18,6 @@ module.exports = {
 
 
     connection:"legacy_stewardwise",
-// connection:"nss",
 
 
 
@@ -150,6 +149,7 @@ module.exports = {
         }, 
         
         /*
+        // Deprecated
         territory_id : {
             type : "integer",
             size : 11,
@@ -213,13 +213,13 @@ module.exports = {
      * {
      *    [ 
      *      {
-     *        "name": <string>,
+     *        "name": <string>,         // Surname, Given name (Preferred)
      *        "chineseName": <string>,
-     *        "accountNum": <string>,
+     *        "accountNum": <string>,   // 10XXXX
      *        "baseSalary": <integer>,  // ytdBalance
      *        "email": <string>,        // secure email
-     *        "phone": <string>,        // (H), (O), (M), joined by ','
-     *        "territory": <string>,    // multiple territories joined by ','
+     *        "phone": <string>,        // (H), (O), (M), joined by ', '
+     *        "territory": <string>,    // multiple territories joined by ', '
      *        "poc": <boolean>,         // is family point of contact?
      *        "region": <string>,       // derived from territory desc
      *        "regionHRIS": <string>,   // derived from HRIS team location
@@ -230,13 +230,23 @@ module.exports = {
      *    ]
      * }
      *
+     * @param string regionCode
+     *      Optional. Only fetch staff from this territory region.
      * @return Deferred
      */
-    staffInfo: function() {
+    staffInfo: function(regionCode) {
         var dfd = AD.sal.Deferred();
         var hris = sails.config.connections.legacy_hris.database;
         if (!hris) {
-            throw new Error('legacy_hris connection not defined in the settings');
+            throw new Error('legacy_hris connection not defined in the config');
+        }
+        
+        // If region was specified, then filter results by adding a HAVING 
+        // clause to the sql.
+        var regionCode = regionCode || null;
+        var havingClause = "";
+        if (typeof region == 'string') {
+            havingClause = " HAVING region = ? ";
         }
         
         LNSSRen.query(" \
@@ -250,7 +260,7 @@ module.exports = {
                 nr.nssren_salaryAmount AS baseSalary, \
                 nr.nssren_ytdBalance AS accountBal, \
                 e.email_address AS email, \
-                GROUP_CONCAT( \
+                GROUP_CONCAT(DISTINCT \
                     p.phone_number, ' (', \
                     SUBSTRING(ptt.phonetype_label, 1, 1), ')' \
                     SEPARATOR ', ' \
@@ -295,9 +305,13 @@ module.exports = {
                     ON asgn.team_id = asgn_t.team_id \
                 LEFT JOIN "+hris+".hris_xref_team_location AS xtl \
                     ON asgn.team_id = xtl.team_id \
+            \
             GROUP BY \
                 r.ren_id \
-        ", function(err, staff) {
+            \
+            "+ havingClause +" \
+            \
+        ", [regionCode], function(err, staff) {
             if (err) {
                 dfd.reject(err);
             } else {
@@ -324,16 +338,27 @@ module.exports = {
     },
     
     
-    staffInfoByAccount: function() {
+    /**
+     * Stewardwise & HRIS info of active staff, indexed by account number.
+     * Married couples usually share account numbers. So when an account has
+     * multiple staff, the family point of contact will have priority in being
+     * listed.
+     *
+     * @param string regionCode
+     * @return Deferred
+     */
+    staffInfoByAccount: function(regionCode) {
         var dfd = AD.sal.Deferred();
         
-        LNSSRen.staffInfo()
+        LNSSRen.staffInfo(regionCode)
         .fail(dfd.reject)
         .done(function(list) {
             var byAccount = {};
             for (var i=0; i<list.length; i++) {
                 var account = parseInt(list[i].accountNum);
-                byAccount[account] = row;
+                if (!byAccount[account] || list[i].poc) {
+                    byAccount[account] = list[i];
+                }
             }
             dfd.resolve(byAccount);
         });
