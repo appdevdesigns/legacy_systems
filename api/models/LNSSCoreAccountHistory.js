@@ -162,8 +162,8 @@ module.exports = {
                     FROM nss_core_accounthistory AS h2 \
                     ORDER BY h2.accounthistory_fiscalyear DESC \
                     LIMIT 2 \
-                ) AS recentTwo \
-                    ON h1.accounthistory_fiscalyear = recentTwo.yyyy \
+                ) AS recentTwoYears \
+                    ON h1.accounthistory_fiscalyear = recentTwoYears.yyyy \
             \
             ORDER BY \
                 h1.subaccounts_accountNum ASC, \
@@ -202,8 +202,8 @@ module.exports = {
      */
     recent12Balances: function() {
         var dfd = AD.sal.Deferred();
-        // Find the periods of the most recent year where nobody has balances
-        // in. These periods will be removed from recent24Balances()'s results.
+        // Find the recent year's periods where all balances are zero.
+        // These periods will be removed from recent24Balances()'s results.
         LNSSCoreAccountHistory.query("\
             SELECT \
                 SUM(h1.accounthistory_ytdbal01) AS s1, \
@@ -225,8 +225,8 @@ module.exports = {
                     FROM nss_core_accounthistory AS h2 \
                     ORDER BY h2.accounthistory_fiscalyear DESC \
                     LIMIT 1 \
-                ) AS recentOne \
-                    ON h1.accounthistory_fiscalyear = recentOne.yyyy \
+                ) AS recentOneYear \
+                    ON h1.accounthistory_fiscalyear = recentOneYear.yyyy \
         ", function(err, results) {
             if (err) {
                 dfd.reject(err);

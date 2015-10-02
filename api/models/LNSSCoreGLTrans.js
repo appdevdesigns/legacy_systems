@@ -75,7 +75,8 @@ module.exports = {
             size : 50,
             defaultsTo : "0"
         }, 
-
+        
+        // Fiscal period YYYYMM
         gltran_perpost : {
             type : "integer",
             size : 11,
@@ -126,12 +127,12 @@ module.exports = {
             FROM \
                 nss_core_gltran \
             WHERE \
-                gltran_perpost > '" + startingPeriod + "' \
+                gltran_perpost > ? \
                 AND gltran_dramt > 0 \
                 AND gltran_subacctnum LIKE '10____' \
             GROUP BY \
                 gltran_subacctnum \
-        ", function(err, results) {
+        ", [startingPeriod], function(err, results) {
             if (err) {
                 dfd.reject(err);
             } else {
@@ -173,12 +174,12 @@ module.exports = {
             FROM \
                 nss_core_gltran \
             WHERE \
-                gltran_perpost > '" + startingPeriod + "' \
+                gltran_perpost > ? \
                 AND gltran_acctnum IN ('4000', '4010') \
                 AND gltran_subacctnum LIKE '10____' \
             GROUP BY \
                 gltran_subacctnum \
-        ", function(err, results) {
+        ", [startingPeriod], function(err, results) {
             if (err) {
                 dfd.reject(err);
             } else {
@@ -225,23 +226,23 @@ module.exports = {
         LNSSCoreGLTrans.query(" \
             SELECT \
                 gltran_subacctnum AS account, \
-                ROUND((SUM(gltran_dramt) + SUM(gltran_cramt)) / 12) AS avgSalary \
+                ROUND((SUM(gltran_dramt) + SUM(gltran_cramt)) / 12) AS avgSal \
             FROM \
                 nss_core_gltran \
             WHERE \
-                gltran_perpost > '" + startingPeriod + "' \
+                gltran_perpost > ? \
                 AND gltran_acctnum IN ('7000') \
                 AND gltran_subacctnum LIKE '10____' \
             GROUP BY \
                 gltran_subacctnum \
-        ", function(err, results) {
+        ", [startingPeriod], function(err, results) {
             if (err) {
                 dfd.reject(err);
             } else {
                 var resultsByAccount = {};
                 for (var i=0; i<results.length; i++) {
                     var account = results[i].account;
-                    var avgSalary = results[i].avgSalary;
+                    var avgSalary = results[i].avgSal;
                     resultsByAccount[account] = avgSalary;
                 }
                 dfd.resolve(resultsByAccount);
@@ -275,12 +276,12 @@ module.exports = {
             FROM \
                 nss_core_gltran \
             WHERE \
-                gltran_perpost > '" + startingPeriod + "' \
+                gltran_perpost > ? \
                 AND gltran_acctnum = '5000' \
                 AND gltran_subacctnum LIKE '10____' \
             GROUP BY \
                 gltran_subacctnum \
-        ", function(err, results) {
+        ", [startingPeriod], function(err, results) {
             if (err) {
                 dfd.reject(err);
             } else {

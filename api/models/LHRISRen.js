@@ -17,7 +17,6 @@ module.exports = {
 
 
     connection: ['legacy_hris'],
-// connection: ['hris'],
 
 
 
