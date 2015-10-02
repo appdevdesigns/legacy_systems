@@ -296,8 +296,67 @@ module.exports = {
         });
     
         return dfd;
+    },
+    
+    
+    /**
+     * The recent fiscal periods where each staff made a short pay adjustment.
+     * (i.e. reduced their salary for that month)
+     *
+     * Periods are delivered as integers, representing the number of months
+     * after the startingPeriod.
+     *
+     * {
+     *    <staff account>: [ <int>, ... ],
+     *    ...
+     * }
+     *
+     * @param string startingPeriod
+     *      The gltran_perpost period from 12 months ago.
+     *      Format: YYYYMM
+     * @return Deferred
+     */
+    shortPayPeriods: function(startingPeriod) {
+        var dfd = AD.sal.Deferred();
+        
+        LNSSCoreGLTrans.query(" \
+            SELECT \
+                gltran_subacctnum AS accountNum, \
+                COUNT(DISTINCT gltran_perpost) AS count, \
+                GROUP_CONCAT(DISTINCT \
+                    PERIOD_DIFF(gltran_perpost, ?) \
+                ) AS p \
+            FROM \
+                nss_core_gltran \
+            WHERE \
+                gltran_perpost > ? \
+                AND gltran_acctnum = '7000' \
+                AND gltran_cramt > 0 \
+                AND gltran_subacctnum LIKE '10____' \
+            GROUP BY \
+                gltran_subacctnum \
+        ", [startingPeriod, startingPeriod], function(err, results) {
+            if (err) {
+                dfd.reject(err);
+            } else {
+                var byAccount = {};
+                for (var i=0; i<results.length; i++) {
+                    var account = results[i].accountNum;
+                    byAccount[account] = [];
+                    if (results[i].count > 0) {
+                        // Results are a string joined by commas so split
+                        // into an array.
+                        byAccount[account] = String(results[i].p).split(',');
+                    }
+                }
+                dfd.resolve(byAccount);
+            }
+        });
+        
+        return dfd;
     }
     
     
 };
+
 

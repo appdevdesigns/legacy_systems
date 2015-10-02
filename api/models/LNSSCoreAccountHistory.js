@@ -258,7 +258,7 @@ module.exports = {
                         } else {
                             // New accounts may have less periods on record
                             balances = balances.slice(0, indexEnd-12);
-                            while (balances.length < 24) {
+                            while (balances.length < 12) {
                                 // Pad the beginning of the array with 0s
                                 balances.unshift(0);
                             }
