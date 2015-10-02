@@ -96,7 +96,6 @@ module.exports= {
 
 
         _resolveOptions:function(options, pkList){
-// AD.log('... _resolveOptions(', options,', "'+pkList+'"")');
 
             // if nothing,  set to empty values
             options = options || {};    // default to none
@@ -118,8 +117,6 @@ module.exports= {
 
             // make sure there is a filter value:
             options.filter = options.filter || {};
-
-// AD.log('... ... options:', options);
 
             return options;
         },
@@ -729,7 +726,6 @@ var createLookups = function( resource, idListKey, idKey, fnKeyID, fnKeyGUID) {
      *  @return [array] 
      */
     module.exports[fnKeyGUID] = function(options){
-// AD.log('... guidLookup(): resource['+resource+'] idListKey['+idListKey+'] idKey['+idKey+'] fnKeyID['+fnKeyID+'] fnKeyGUID['+fnKeyGUID+']');
         var dfd = AD.sal.Deferred();
         var self = this;
 

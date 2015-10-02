@@ -245,7 +245,7 @@ module.exports = {
         // clause to the sql.
         var regionCode = regionCode || null;
         var havingClause = "";
-        if (typeof region == 'string') {
+        if (typeof regionCode == 'string') {
             havingClause = " HAVING region = ? ";
         }
         
