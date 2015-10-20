@@ -104,6 +104,89 @@ module.exports = {
     ////////////////////////////
     
     /**
+     * @param array periods
+     *      Array of yyyymm period strings.
+     * @param string account
+     *      Optional. Filter by staff account number.
+     * @return Deferred
+     *      Resolves with (transactions, byPeriod)
+     */
+    byAccount: function(periods, account) {
+        var dfd = AD.sal.Deferred();
+        
+        var accountFilter = account || '10____';
+        
+        var transactions = {
+        /*
+            <staff_account>: [
+                {
+                    period: 'yyyymm',   // FISCAL PERIOD
+                    date: <date>,       // REAL WORLD DATE
+                    income: <number>,
+                    expenses: <number>,
+                    desc: 'description'
+                },
+                ...
+            ],
+            ...
+        */
+        };
+        
+        var byPeriod = {
+        /*
+            <staff_account>: {
+                <period>: {
+                    date: <date>,
+                    income: <number>,
+                    expenses: <number>
+                },
+                ...
+            },
+            ...
+        */
+        }
+        
+        LNSSCoreGLTrans.find()
+        .where({ gltran_perpost: periods })
+        .where({ gltran_subacctnum: {'like': accountFilter} })
+        .fail(function(err) {
+            dfd.reject(err);
+        })
+        .then(function(list) {
+            for (var i=0; i<list.length; i++) {
+                var staffAccount = list[i].gltran_subacctnum;
+                var period = list[i].gltran_perpost;
+                var date = list[i].gltran_trandate;
+                var debit = list[i].gltran_dramt;
+                var credit = list[i].gltran_cramt;
+                var desc = list[i].gltran_trandesc;
+                var glAccount = list[i].gltran_acctnum;
+                
+                transactions[staffAccount] = transactions[staffAccount] || [];
+                transactions[staffAccount].push({
+                    period: period,
+                    date: date,
+                    income: credit,
+                    expenses: debit,
+                    desc: desc,
+                    gl_account: glAccount
+                });
+                
+                byPeriod[staffAccount] = byPeriod[staffAccount] || {};
+                byPeriod[staffAccount][period] = byPeriod[staffAccount][period] || { income:0, expenses:0, date:date };
+                byPeriod[staffAccount][period].income += credit;
+                byPeriod[staffAccount][period].expenses += debit;
+            }
+            
+            dfd.resolve(transactions, byPeriod);
+        });
+        
+        return dfd;
+    },
+    
+    
+    
+    /**
      * Average amount of funds leaving the account per month, over the past
      * twelve months.
      *
