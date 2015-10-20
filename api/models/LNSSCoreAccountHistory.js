@@ -429,7 +429,7 @@ module.exports = {
     balanceForPeriods: function(periods, account) {
         var dfd = AD.sal.Deferred();
         
-        var accountFiler = account || '10____';
+        var accountFilter = account || '10____';
         
         // Find out which fiscal years are being requested
         var years = [];
@@ -440,9 +440,9 @@ module.exports = {
             }
         }
         
-        LNSSCoreAccountHistory.find();
-        .where({ accounthistory_fiscalyear: years });
-        .where({ subaccounts_accountNum: {'like': accountFilter} });
+        LNSSCoreAccountHistory.find()
+        .where({ accounthistory_fiscalyear: years })
+        .where({ subaccounts_accountNum: {'like': accountFilter} })
         .fail(function(err) {
             dfd.reject(err);
         })

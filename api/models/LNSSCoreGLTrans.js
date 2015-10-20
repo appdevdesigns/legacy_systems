@@ -30,12 +30,18 @@ module.exports = {
             primaryKey : true,
             autoIncrement : true
         }, 
-
+        
         gltran_acctnum : {
             type : "integer",
             size : 11,
             defaultsTo : "0"
         }, 
+        /*
+        gltran_acctnum : {
+            model: 'LNSSCoreChartOfAccounts',
+            via: 'chartofaccounts_accountNum'
+        },
+        */
 
         gltran_subacctnum : {
             type : "string",
@@ -124,7 +130,9 @@ module.exports = {
                     date: <date>,       // REAL WORLD DATE
                     income: <number>,
                     expenses: <number>,
-                    desc: 'description'
+                    desc: 'description',
+                    code: 'gl account code',
+                    id: <number>        // gltran_id
                 },
                 ...
             ],
@@ -144,7 +152,7 @@ module.exports = {
             },
             ...
         */
-        }
+        };
         
         LNSSCoreGLTrans.find()
         .where({ gltran_perpost: periods })
@@ -161,6 +169,7 @@ module.exports = {
                 var credit = list[i].gltran_cramt;
                 var desc = list[i].gltran_trandesc;
                 var glAccount = list[i].gltran_acctnum;
+                var id = list[i].gltran_id;
                 
                 transactions[staffAccount] = transactions[staffAccount] || [];
                 transactions[staffAccount].push({
@@ -169,7 +178,7 @@ module.exports = {
                     income: credit,
                     expenses: debit,
                     desc: desc,
-                    gl_account: glAccount
+                    code: glAccount
                 });
                 
                 byPeriod[staffAccount] = byPeriod[staffAccount] || {};
