@@ -263,7 +263,7 @@ module.exports = {
                     AND REPLACE(a.account_number, '-', '') LIKE ? \
                 \
                 JOIN nss_core_ren AS nr \
-                    ON r.ren_guid = r.ren_guid \
+                    ON r.ren_guid = nr.ren_guid \
             \
         ", [viewerGUID, account], function(err, results) {
             if (err) dfd.reject(err);
