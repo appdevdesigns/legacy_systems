@@ -279,6 +279,245 @@ module.exports = {
     findByAccount: function(options) {
         return this.findByViewerGUID(options);
     },
+    
+    
+    /**
+     * Find the transactions from the current open period
+     * - payroll
+     * - reimbursements
+     * - donations
+     * - account transfers
+     *
+     * @param object options
+     *  { nssrenID: <int> }
+     * @return Deferred
+     */
+    currentTransactions: function(options) {
+        var dfd = AD.sal.Deferred();
+        var hris = sails.config.connections.legacy_hris.database;
+        if (!hris) {
+            throw new Error('legacy_hris connection not defined in the config');
+        }
+
+        var transactions = {
+            'payroll': [],
+            'reimbursements': [],
+            'donations': [],
+            'transfers': []
+        };
+        
+        var period, periodID;
+        var nssrenID = options.nssrenID;
+        
+        async.auto({
+            'getPeriod': function(next) {
+                LNSSCoreFiscalPeriod.currentPeriod()
+                .fail(next)
+                .done(function(data) {
+                    period = String(data.fiscalPeriod);
+                    periodID = data.requestcutoff_id;
+                    next();
+                });
+            },
+            
+            'payroll': ['getPeriod', function(next) {
+                LNSSRen.query(" \
+                    SELECT \
+                        tran.*, \
+                        terr.territory_desc \
+                    FROM \
+                        nss_payroll_transactions AS tran \
+                        JOIN nss_core_territory terr \
+                            ON tran.nsstransaction_territory_id = terr.territory_id \
+                    WHERE \
+                        nssren_id = ? \
+                        AND requestcutoff_id = ? \
+                ", [nssrenID, periodID], function(err, results) {
+                    if (err) next(err);
+                    else {
+                        for (var i=0; i<results.length; i++) {
+                            var row = results[i];
+                            // This amount includes all payroll adjustments
+                            transactions.payroll.push({
+                                id: 'payroll-' + row.nsstransaction_id,
+                                period: period,
+                                date: row.nsstransaction_date,
+                                credit: 0,
+                                debit: row.nsstransaction_totalSalary,
+                                type: 'Salary', // code 7000 ?
+                                description: 'Payroll from ' + row.territory_desc
+                            });
+                        }
+                        next();
+                    }
+                });
+            }],
+            
+            'reimbursements': ['getPeriod', function(next) {
+                LNSSRen.query(" \
+                    SELECT \
+                        CONCAT('reimb-', reimbursement_id) AS 'id', \
+                        ? AS 'period', \
+                        reimbursement_dateApproved AS 'date', \
+                        0 AS 'credit', \
+                        reimbursement_sum AS 'debit', \
+                        'Reimbursement' AS 'type', \
+                        reimbursement_description AS 'description' \
+                    FROM \
+                        nss_reimb_reimbursement \
+                    WHERE \
+                        nssren_id = ? \
+                        AND requestcutoff_id = ? \
+                        AND reimbursement_status = 'Paid' \
+                    \
+                ", [period, nssrenID, periodID], function(err, results) {
+                    if (err) next(err);
+                    else {
+                        for (var i=0; i<results.length; i++) {
+                            // Results field names are already set up in the
+                            // SQL query.
+                            transactions.reimbursements.push(results[i]);
+                        }
+                        next();
+                    }
+                });
+            }],
+
+            'donations': ['getPeriod', function(next) {
+                LNSSRen.query(" \
+                    SELECT \
+                        d.* \
+                    FROM \
+                        nss_don_donBatch AS d \
+                        LEFT JOIN nss_don_glbatch AS gl \
+                            ON d.glbatch_id = gl.glbatch_id \
+                    WHERE \
+                        nssren_id = ? \
+                        AND d.donBatch_status = 'Received' \
+                        AND ( \
+                            d.glbatch_id = 0 \
+                            OR gl.glbatch_period > ? \
+                        ) \
+                ", [nssrenID, period], function(err, results) {
+                    if (err) next(err);
+                    else {
+                        for (var i=0; i<results.length; i++) {
+                            var row = results[i];
+                            // Split into two transactions. One for the actual
+                            // donation, and one for the assessment fee.
+                            transactions.donations.push({
+                                id: 'don-' + row.donBatch_id +'-A',
+                                period: period,
+                                date: row.donBatch_dateProcessed,
+                                credit: row.donBatch_amount,
+                                debit: 0,
+                                type: 'Donation',
+                                description: 'Donation'
+                            });
+                            transactions.donations.push({
+                                id: 'don-' + row.donBatch_id +'-B',
+                                period: period,
+                                date: row.donBatch_dateProcessed,
+                                credit: 0,
+                                debit: row.donBatch_fee,
+                                type: 'Assessment',
+                                description: 'DN' + row.donBatch_id + ' assessment'
+                            });
+                        }
+                        next();
+                    }
+                });
+            }],
+            
+            'transfers': ['getPeriod', function(next) {
+                LNSSRen.query(" \
+                    SELECT \
+                        t.*, \
+                        acc1.account_number AS 'sender_account', \
+                        acc2.account_number AS 'recipient_account' \
+                    FROM \
+                        nss_don_transfer t \
+                        \
+                        JOIN nss_core_ren nr1 \
+                            ON t.sender_nssren_id = nr1.nssren_id \
+                        JOIN "+hris+".hris_ren_data r1 \
+                            ON nr1.ren_guid = r1.ren_guid \
+                        JOIN "+hris+".hris_worker w1 \
+                            ON r1.ren_id = w1.ren_id \
+                        JOIN "+hris+".hris_account acc1 \
+                            ON w1.account_id = acc1.account_id \
+                        \
+                        JOIN nss_core_ren nr2 \
+                            ON t.receiver_nssren_id = nr2.nssren_id \
+                        JOIN "+hris+".hris_ren_data r2 \
+                            ON nr2.ren_guid = r2.ren_guid \
+                        JOIN "+hris+".hris_worker w2 \
+                            ON r2.ren_id = w2.ren_id \
+                        JOIN "+hris+".hris_account acc2 \
+                            ON w2.account_id = acc2.account_id \
+                        \
+                        LEFT JOIN nss_don_glbatch as gl \
+                            ON t.glbatch_id = gl.glbatch_id \
+                    WHERE \
+                        ( \
+                            t.glbatch_id = 0 \
+                            OR gl.glbatch_period > ? \
+                        ) AND (( \
+                            receiver_nssren_id = ? \
+                            AND transfer_status = 'Completed' \
+                        ) OR ( \
+                            sender_nssren_id = ? \
+                            AND transfer_status NOT IN ('Suspend', 'Canceled') \
+                        )) \
+                ", [period, nssrenID, nssrenID], function(err, results) {
+                    if (err) next(err);
+                    else {
+                        for (var i=0; i<results.length; i++) {
+                            var row = results[i];
+                            var packet = {
+                                    id: 'xfer-' + row.transfer_id,
+                                    period: period,
+                                    date: row.transfer_date_processed,
+                                    type: 'Account Transfer ',
+                                    description: row.transfer_type // monthly / one-time
+                            };
+                            if (row.sender_nssren_id == nssrenID) {
+                                packet.credit = 0;
+                                packet.debit = row.transfer_amount;
+                                packet.type += 'sent';
+                                if (row.transfer_anonymous == 0) {
+                                    packet.description += ' transfer to ' + row.recipient_account;
+                                } else {
+                                    packet.description = 'Anonymous';
+                                }
+                            } else {
+                                packet.debit = 0;
+                                packet.credit = row.transfer_amount;
+                                packet.type += 'received';
+                                if (row.transfer_anonymous == 0) {
+                                    packet.description += ' transfer from ' + row.sender_account;
+                                } else {
+                                    packet.description = 'Anonymous';
+                                }
+                            }
+                            packet.description += ' (' + row.transfer_reason +')';
+                            
+                            transactions.transfers.push(packet);
+                        }
+                        next();
+                    }
+                });
+            }]
+            
+        }, function(err) {
+            if (err) dfd.reject(err);
+            else dfd.resolve(transactions);
+        });
+        
+        return dfd;
+    },
+    
+    
     /**
      * Stewardwise & HRIS info of all active staff
      * {
