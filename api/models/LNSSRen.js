@@ -208,6 +208,77 @@ module.exports = {
     // Model class methods
     ////////////////////////////
     
+    
+    /**
+     * Finds the row of data for a staff from either 
+     *      - their viewer_guid
+     *      - or their account_number
+     *
+     * This returns a jQuery Deferred. It cannot be chained into other
+     * Waterline ORM methods.
+     * 
+     * Note that viewer_guid is not the same as ren_guid.
+     *
+     * @param object options
+     *      { 
+     *          viewerGUID: <string>,   // guid from CAS
+     *          account: <string>,      // 10____ from HRIS
+     *      }
+     * @return Deferred
+     */
+    findByViewerGUID: function(options) {
+        var dfd = AD.sal.Deferred();
+        var hris = sails.config.connections.legacy_hris.database;
+        if (!hris) {
+            throw new Error('legacy_hris connection not defined in the config');
+        }
+        
+        if (!options || !options.viewerGUID && !options.account) {
+            throw new Error('Must specify either `viewerGUID` or `account` option');
+        }
+        
+        var viewerGUID = options.viewerGUID || '%';
+        var account = options.account || '10____';
+        
+        LNSSRen.query(" \
+            SELECT \
+                nr.*, \
+                a.account_number, \
+                r.ren_givenname, r.ren_surname, r.ren_preferredname, \
+                CONCAT( \
+                    r.ren_surname, ', ', \
+                    r.ren_givenname, ' (', \
+                    r.ren_preferredname, ')' \
+                ) AS 'name' \
+            FROM \
+                "+hris+".hris_perm_access AS pa \
+                JOIN "+hris+".hris_ren_data AS r \
+                    ON pa.viewer_guid LIKE ? \
+                    AND pa.ren_id = r.ren_id \
+                \
+                JOIN "+hris+".hris_worker AS w \
+                    ON w.ren_id = r.ren_id \
+                JOIN "+hris+".hris_account AS a \
+                    ON w.account_id = a.account_id \
+                    AND REPLACE(a.account_number, '-', '') LIKE ? \
+                \
+                JOIN nss_core_ren AS nr \
+                    ON r.ren_guid = r.ren_guid \
+            \
+        ", [viewerGUID, account], function(err, results) {
+            if (err) dfd.reject(err);
+            else {
+                dfd.resolve(results);
+            }
+        });
+        
+        return dfd;
+    },
+    
+    // Alias
+    findByAccount: function(options) {
+        return this.findByViewerGUID(options);
+    },
     /**
      * Stewardwise & HRIS info of all active staff
      * {
