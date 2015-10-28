@@ -90,6 +90,11 @@ module.exports = {
             size : 11,
             defaultsTo : "0"
         }, 
+        
+        donItems: {
+            collection: 'LNSSDonItem',
+            via: 'donBatch_id'
+        }
 
 
     }

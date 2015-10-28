@@ -199,6 +199,11 @@ module.exports = {
         territories: {
             collection: 'LNSSRenTerritory',
             via: 'nssren_id'
+        },
+        
+        donorRelations: {
+            collection: 'LNSSDonorRelations',
+            via: 'nssren_id'
         }
 
     },
