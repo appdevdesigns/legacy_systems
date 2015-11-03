@@ -110,6 +110,8 @@ module.exports = {
     ////////////////////////////
     
     /**
+     * Finds GL transactions grouped by account.
+     *
      * @param array periods
      *      Array of yyyymm period strings.
      * @param string account
@@ -227,8 +229,57 @@ module.exports = {
     },
     
     
+    /**
+     * Finds the monthly income and expenditure of one account.
+     *
+     * [
+     *    {
+     *      "period": <string>
+     *      "income": <int>,
+     *      "expenditure": <int>
+     *    },
+     *    ...
+     * ]
+     *
+     * @param string startingPeriod
+     *      The gltran_perpost period to start counting from
+     *      Format: YYYYMM
+     * @param string account
+     *      The staff account number 10____
+     * @return Deferred
+     */
+    monthlyIncomeExpenditure: function(startingPeriod, account) {
+        var dfd = AD.sal.Deferred();
+        
+        LNSSCoreGLTrans.query(" \
+            SELECT \
+                gltran_perpost AS period, \
+                ROUND(SUM(gltran_cramt)) AS income, \
+                ROUND(SUM(gltran_dramt)) AS expenditure \
+            FROM \
+                nss_core_gltran \
+            WHERE \
+                gltran_perpost > ? \
+                AND gltran_subacctnum = ? \
+            GROUP BY \
+                gltran_perpost \
+            ORDER BY \
+                gltran_perpost; \
+        ", [startingPeriod, account], function(err, results) {
+            if (err) {
+                dfd.reject(err);
+            } else {
+                dfd.resolve(results);
+            }
+        });
+        
+        return dfd;
+    },
+    
+    
+    /**
      * Average amount of funds leaving the account per month, over the past
-     * twelve months.
+     * twelve months, of all staff.
      *
      * {
      *    <staff account>: <avgExpenditure>,
@@ -275,7 +326,7 @@ module.exports = {
     
     /**
      * Average amount of funds entering the account per month, over the past
-     * twelve months.
+     * twelve months, of all staff.
      *
      * {
      *    <staff account>: <avgIncome>,
@@ -322,7 +373,7 @@ module.exports = {
     
     /**
      * The average amount of funds added from local sources per month,
-     * over the past twelve months.
+     * over the past twelve months, for all staff.
      *
      * {
      *    <staff account>: <avgLocalContrib>,
@@ -369,7 +420,7 @@ module.exports = {
     
     /**
      * The average amount of funds added from foreign sources per month,
-     * over the past twelve months.
+     * over the past twelve months, for all staff.
      *
      * {
      *    <staff account>: <avgSalary>,
@@ -424,7 +475,8 @@ module.exports = {
     
     
     /**
-     * The average amount of monthly salary over the past 12 months.
+     * The average amount of monthly salary over the past 12 months, for all
+     * staff.
      *
      * {
      *    <staff account>: <avgSalary>,
