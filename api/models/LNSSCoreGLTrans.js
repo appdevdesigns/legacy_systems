@@ -196,6 +196,37 @@ module.exports = {
     
     
     /**
+     * Finds the fiscal period from X months prior to the latest period 
+     * on record.
+     *
+     * @param int monthsBack
+     *      The number of months to go back
+     * @return Deferred
+     */
+    getPastPeriod: function(monthsBack) {
+        var dfd = AD.sal.Deferred();
+        
+        LNSSCoreGLTrans.query(" \
+            SELECT \
+                PERIOD_ADD(MAX(gltran_perpost), ?) AS 'period' \
+            FROM \
+                nss_core_gltran \
+        ", [parseInt(monthsBack) * -1], function(err, results) {
+            if (err) {
+                dfd.reject(err);
+            } else {
+                if (results && results[0]) {
+                    dfd.resolve(results[0].period);
+                } else {
+                    dfd.resolve(0);
+                }
+            }
+        });
+        
+        return dfd;
+    },
+    
+    
      * Average amount of funds leaving the account per month, over the past
      * twelve months.
      *
