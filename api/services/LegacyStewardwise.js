@@ -1244,40 +1244,48 @@ var Helper = {
 
     },
 
-
+    
+    /**
+     * Calculate the expected number of months until an account is in deficit.
+     *
+     * @param object options
+     *      options.accountBalance
+     *      options.avgIncome
+     *      options.avgExpenditure
+     *  @return integer/string
+     */
     getMonthsTilDeficit:function(options) {
         var monthsTilDeficit = 1;
 
-            //the account is currently in deficit
-            if (options.accountBalance < 0){
-                return "1";
-            }
+        //the account is currently in deficit
+        if (options.accountBalance < 0){
+            return "1";
+        }
 
-            // Ed Graham's formula
-            var accountTrend = options.avgContributions - options.avgExpenditures;
-
-            if (accountTrend >= 0) {
+        // Ed Graham's formula
+        var accountTrend = options.avgIncome - options.avgExpenditure;
+        if (accountTrend >= 0) {
+            monthsTilDeficit = 'NA';
+        } else {
+            monthsTilDeficit = Math.ceil(options.accountBalance / (accountTrend * -1));
+            if (monthsTilDeficit >= 13) {
                 monthsTilDeficit = 'NA';
-            } else {
-                monthsTilDeficit = Math.ceil(options.accountBalance / (accountTrend * -1));
-                if (monthsTilDeficit >= 13) {
-                    monthsTilDeficit = 'NA';
-                }
             }
-            /*
-            //the account will never be in deficit since avgContributions > payroll or they are equal
-            if (avgContributions > payroll || avgContributions == avgPayroll) {
-                monthsTilDeficit = "NA";
-            } else {
-                //Continue to add avgContributions and subtract payroll to accountBalance
-                //until accountBalance is in deficit (negative)
-                while (accountBalance > 0) {
-                    accountBalance = accountBalance + avgContributions - payroll;
-                    monthsTilDeficit++;
-                }
+        }
+        /*
+        //the account will never be in deficit since avgContributions > payroll or they are equal
+        if (avgContributions > payroll || avgContributions == avgPayroll) {
+            monthsTilDeficit = "NA";
+        } else {
+            //Continue to add avgContributions and subtract payroll to accountBalance
+            //until accountBalance is in deficit (negative)
+            while (accountBalance > 0) {
+                accountBalance = accountBalance + avgContributions - payroll;
+                monthsTilDeficit++;
             }
-            */
-            return monthsTilDeficit;
+        }
+        */
+        return monthsTilDeficit;
 
     },
 
