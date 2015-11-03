@@ -446,7 +446,7 @@ module.exports = {
      * after the startingPeriod.
      *
      * {
-     *    <staff account>: [ <int>, ... ],
+     *    <staff account>: [ <yyyymm>, ... ],
      *    ...
      * }
      *
@@ -462,9 +462,7 @@ module.exports = {
             SELECT \
                 gltran_subacctnum AS accountNum, \
                 COUNT(DISTINCT gltran_perpost) AS count, \
-                GROUP_CONCAT(DISTINCT \
-                    PERIOD_DIFF(gltran_perpost, ?) \
-                ) AS p \
+                GROUP_CONCAT(DISTINCT gltran_perpost) AS p \
             FROM \
                 nss_core_gltran \
             WHERE \
