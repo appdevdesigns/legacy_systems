@@ -243,6 +243,53 @@ module.exports = {
     
     
     /**
+     * Average amount of funds entering the account per month, over the past
+     * twelve months.
+     *
+     * {
+     *    <staff account>: <avgIncome>,
+     *    ...
+     * }
+     *
+     * @param string startingPeriod
+     *      The gltran_perpost period from 12 months ago.
+     *      Format: YYYYMM
+     * @return Deferred
+     */
+    avgMonthlyIncome: function(startingPeriod) {
+        var dfd = AD.sal.Deferred();
+        
+        LNSSCoreGLTrans.query(" \
+            SELECT \
+                gltran_subacctnum AS account, \
+                ROUND(SUM(gltran_cramt) / 12) AS avgIncome \
+            FROM \
+                nss_core_gltran \
+            WHERE \
+                gltran_perpost > ? \
+                AND gltran_cramt > 0 \
+                AND gltran_subacctnum LIKE '10____' \
+            GROUP BY \
+                gltran_subacctnum \
+        ", [startingPeriod], function(err, results) {
+            if (err) {
+                dfd.reject(err);
+            } else {
+                var resultsByAccount = {};
+                for (var i=0; i<results.length; i++) {
+                    var account = results[i].account;
+                    var avgIncome = results[i].avgIncome;
+                    resultsByAccount[account] = avgIncome;
+                }
+                dfd.resolve(resultsByAccount);
+            }
+        });
+        
+        return dfd;
+    },
+    
+    
+    /**
      * The average amount of funds added from local sources per month,
      * over the past twelve months.
      *
