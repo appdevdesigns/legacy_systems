@@ -6,6 +6,8 @@
 */
 
 var AD = require('ad-utils');
+var Entities = require('html-entities').AllHtmlEntities;
+var entities = new Entities();
 
 module.exports = {
 
@@ -307,6 +309,7 @@ module.exports = {
         var transactions = {
             'payroll': [],
             'reimbursements': [],
+            'advances': [],
             'donations': [],
             'transfers': []
         };
@@ -322,6 +325,15 @@ module.exports = {
                     period = String(data.fiscalPeriod);
                     periodID = data.requestcutoff_id;
                     next();
+                });
+            },
+            
+            'charset': function(next) {
+                // Stewardwise has some utf8 text saved in latin1 encoding
+                // and it needs to be retreived with that.
+                LNSSRen.query("SET NAMES latin1", function(err, results) {
+                    if (err) next(err);
+                    else next();
                 });
             },
             
@@ -358,7 +370,7 @@ module.exports = {
                 });
             }],
             
-            'reimbursements': ['getPeriod', function(next) {
+            'reimbursements': ['getPeriod', 'charset', function(next) {
                 LNSSRen.query(" \
                     SELECT \
                         CONCAT('reimb-', reimbursement_id) AS 'id', \
@@ -373,12 +385,15 @@ module.exports = {
                     WHERE \
                         nssren_id = ? \
                         AND requestcutoff_id = ? \
-                        AND reimbursement_status = 'Paid' \
+                        AND reimbursement_status NOT IN ( \
+                            'Rejected', 'Draft' \
+                        ) \
                     \
                 ", [period, nssrenID, periodID], function(err, results) {
                     if (err) next(err);
                     else {
                         for (var i=0; i<results.length; i++) {
+                            results[i].description = entities.decode(results[i].description);
                             // Results field names are already set up in the
                             // SQL query.
                             transactions.reimbursements.push(results[i]);
@@ -387,8 +402,40 @@ module.exports = {
                     }
                 });
             }],
+            
+            'reimbAdvances': ['getPeriod', 'charset', function(next) {
+                LNSSRen.query(" \
+                    SELECT \
+                        CONCAT('reimbAdv-', advance_id) AS 'id', \
+                        ? AS 'period', \
+                        advance_submittedDate AS 'date', \
+                        0 AS 'credit', \
+                        advance_amount AS 'debit', \
+                        'Reimbursement Advance' AS 'type', \
+                        advance_purpose AS 'description' \
+                    FROM \
+                        nss_reimb_advance \
+                    WHERE \
+                        nssren_id = ? \
+                        AND advance_status IN ( \
+                            'Pending_nss', 'Approved', 'Paid' \
+                        ) \
+                    \
+                ", [period, nssrenID], function(err, results) {
+                    if (err) next(err);
+                    else {
+                        for (var i=0; i<results.length; i++) {
+                            results[i].description = entities.decode(results[i].description);
+                            // Results field names are already set up in the
+                            // SQL query.
+                            transactions.advances.push(results[i]);
+                        }
+                        next();
+                    }
+                });
+            }],
 
-            'donations': ['getPeriod', function(next) {
+            'donations': ['getPeriod', 'charset', function(next) {
                 LNSSRen.query(" \
                     SELECT \
                         d.* \
@@ -417,7 +464,7 @@ module.exports = {
                                 credit: row.donBatch_amount,
                                 debit: 0,
                                 type: 'Donation',
-                                description: 'Donation'
+                                description: 'Donation batch'
                             });
                             transactions.donations.push({
                                 id: 'don-' + row.donBatch_id +'-B',
@@ -434,7 +481,7 @@ module.exports = {
                 });
             }],
             
-            'transfers': ['getPeriod', function(next) {
+            'transfers': ['getPeriod', 'charset', function(next) {
                 LNSSRen.query(" \
                     SELECT \
                         t.*, \
@@ -512,7 +559,17 @@ module.exports = {
                         next();
                     }
                 });
-            }]
+            }],
+            
+            'revertCharset': [
+                'reimbursements', 'reimbAdvances', 'donations', 'transfers',
+                function(next) {
+                    LNSSRen.query("SET NAMES utf8", function(err, results) {
+                        if (err) next(err);
+                        else next();
+                    });
+                }
+            ],
             
         }, function(err) {
             if (err) dfd.reject(err);
@@ -531,7 +588,8 @@ module.exports = {
      *        "name": <string>,         // Surname, Given name (Preferred)
      *        "chineseName": <string>,
      *        "accountNum": <string>,   // 10XXXX
-     *        "baseSalary": <integer>,  // ytdBalance
+     *        "baseSalary": <integer>,  // base monthly salary
+     *        "accountBal": <integer>,  // ytdBalance
      *        "email": <string>,        // secure email
      *        "phone": <string>,        // (H), (O), (M), joined by ', '
      *        "territory": <string>,    // multiple territories joined by ', '
@@ -539,7 +597,8 @@ module.exports = {
      *        "region": <string>,       // derived from territory desc
      *        "regionHRIS": <string>,   // derived from HRIS team location
      *        "location_id": <integer>,
-     *        "ren_guid": <string>
+     *        "ren_guid": <string>,
+     *        "nssren_id": <integer>
      *      },
      *      ...
      *    ]
@@ -586,7 +645,8 @@ module.exports = {
                 GROUP_CONCAT(t.territory_desc SEPARATOR ', ') AS territory, \
                 r.ren_isfamilypoc AS poc, \
                 xtl.location_id, \
-                nr.ren_guid \
+                nr.ren_guid, \
+                nr.nssren_id \
             \
             FROM \
                 "+hris+".hris_ren_data AS r \
