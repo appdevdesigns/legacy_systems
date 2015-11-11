@@ -291,9 +291,14 @@ module.exports = {
     /**
      * Find the transactions from the current open period
      * - payroll
+     * - payroll adjustments
      * - reimbursements
+     * - reimbursement advances
      * - donations
      * - account transfers
+     *
+     * This uses the same criteria as StewardWise's estimated account balance
+     * calculation.
      *
      * @param object options
      *  { nssrenID: <int> }
@@ -314,10 +319,11 @@ module.exports = {
             'transfers': []
         };
         
-        var period, periodID;
+        var period, periodID, balancePeriod, balancePeriodID;
         var nssrenID = options.nssrenID;
         
         async.auto({
+            // Current fiscal period
             'getPeriod': function(next) {
                 LNSSCoreFiscalPeriod.currentPeriod()
                 .fail(next)
@@ -325,6 +331,39 @@ module.exports = {
                     period = String(data.fiscalPeriod);
                     periodID = data.requestcutoff_id;
                     next();
+                });
+            },
+            
+            'balancePeriod': function(next) {
+                // Fiscal period when staff's balance was updated
+                LNSSRen.query(" \
+                    SELECT \
+                        p.requestcutoff_id AS 'periodID', \
+                        p.requestcutoff_period AS 'month', \
+                        y.fiscalyear_glprefix AS 'year', \
+                        nr.nssren_balancePeriod \
+                    FROM \
+                        nss_core_ren AS nr \
+                        JOIN nss_core_fiscalperiod AS p \
+                            ON p.requestcutoff_period = RIGHT(nr.nssren_balancePeriod, 2) \
+                        JOIN nss_core_fiscalyear AS y \
+                            ON y.fiscalyear_id = p.requestcutoff_year \
+                            AND y.fiscalyear_glprefix = LEFT(nr.nssren_balancePeriod, 4) \
+                    WHERE \
+                        nr.nssren_id = ? \
+                    \
+                ", [nssrenID], function(err, results) {
+                    if (err) next(err);
+                    else {
+                        if (results && results[0]) {
+                            balancePeriod = '' + results[0].year + results[0].month;
+                            balancePeriodID = results[0].periodID;
+                        } else {
+                            balancePeriod = '000000';
+                            balancePeriodID = 0;
+                        }
+                        next();
+                    }
                 });
             },
             
@@ -337,21 +376,30 @@ module.exports = {
                 });
             },
             
-            'payroll': ['getPeriod', function(next) {
+            'payroll': ['getPeriod', 'balancePeriod', function(next) {
+                // Find all payroll transactions made after the last 
+                // balance update, but not including any pending payroll.
                 LNSSRen.query(" \
                     SELECT \
                         tran.*, \
+                        LEFT(p.requestcutoff_date, 7) AS 'month', \
                         terr.territory_desc \
                     FROM \
                         nss_payroll_transactions AS tran \
                         JOIN nss_core_territory terr \
                             ON tran.nsstransaction_territory_id = terr.territory_id \
+                        \
+                        JOIN nss_core_fiscalperiod AS p \
+                            ON p.requestcutoff_id = tran.requestcutoff_id \
                     WHERE \
                         nssren_id = ? \
-                        AND requestcutoff_id = ? \
-                ", [nssrenID, periodID], function(err, results) {
+                        AND tran.requestcutoff_id > ? \
+                        AND tran.requestcutoff_id < ? \
+                ", [nssrenID, balancePeriodID, periodID], function(err, results) {
                     if (err) next(err);
                     else {
+                        var payrollSum = 0;
+                        
                         for (var i=0; i<results.length; i++) {
                             var row = results[i];
                             // This amount includes all payroll adjustments
@@ -362,34 +410,119 @@ module.exports = {
                                 credit: 0,
                                 debit: row.nsstransaction_totalSalary,
                                 type: 'Salary', // code 7000 ?
-                                description: 'Payroll from ' + row.territory_desc
+                                description: 'Payroll ' + row.month + ' from ' + row.territory_desc
                             });
+                            payrollSum += row.nsstransaction_totalSalary;
+                        }
+                        
+                        if (payrollSum == 0) {
+                            // If there were no salary transactions made for
+                            // this period yet, then add the projected amount.
+                            LNSSRen.find()
+                            .where({ nssren_id: nssrenID })
+                            .fail(next)
+                            .done(function(list) {
+                                var baseSalary = list[0].nssren_salaryAmount;
+                                transactions.payroll.push({
+                                    id: 'payroll-current',
+                                    period: period,
+                                    date: new Date(),
+                                    credit: 0,
+                                    debit: baseSalary,
+                                    type: 'Salary',
+                                    description: 'Payroll'
+                                });
+                                next();
+                            });
+                        }
+                        else {
+                            next();
+                        }
+                    }
+                });
+            }],
+            
+            'adjustments': ['payroll', function(next) {
+                // Adjustments for current period. These are not yet included 
+                // in the payroll transactions above.
+                LNSSRen.query(" \
+                    SELECT \
+                        payrolladjustment_id AS 'id', \
+                        payrolladjustment_date AS 'date', \
+                        payrolladjustment_amount AS 'amount', \
+                        payrolladjustment_desc AS 'desc', \
+                        r.nssadjustmentreason_type AS 'reasonType' \
+                    FROM \
+                        nss_payroll_adjustments AS adj \
+                        JOIN nss_payroll_adjustmentreason AS r \
+                            ON adj.nssadjustmentreason_id = r.nssadjustmentreason_id \
+                    WHERE \
+                        adj.nssren_id = ? \
+                        AND adj.requestcutoff_id = ? \
+                        AND adj.payrolladjustment_status IN ('Approved', 'Pending') \
+                        AND r.nssadjustmentreason_glcode = '7000' \
+                ", [nssrenID, periodID], function(err, results) {
+                    if (err) next(err);
+                    else {
+                        for (var i=0; i<results.length; i++) {
+                            var row = results[i];
+                            var tran = {
+                                id: 'payroll-adj-' + row.id,
+                                period: period,
+                                date: row.date,
+                                credit: 0,
+                                debit: 0,
+                                type: 'Payroll adjustment',
+                                description: row.desc
+                            };
+                            if (row.reasonType == 1) {
+                                // Additional salary
+                                tran.debit = row.amount;
+                            } else {
+                                // Salary deduction
+                                tran.credit = row.amount;
+                            }
+                            transactions.payroll.push(tran);
                         }
                         next();
                     }
                 });
             }],
             
-            'reimbursements': ['getPeriod', 'charset', function(next) {
+            'reimbursements': ['getPeriod', 'balancePeriod', 'charset', function(next) {
+                // Must sum() the approved line items. The `reimbursement_sum`
+                // can't be used because it includes reimb advance credit.
                 LNSSRen.query(" \
                     SELECT \
-                        CONCAT('reimb-', reimbursement_id) AS 'id', \
+                        CONCAT('reimb-', r.reimbursement_id) AS 'id', \
                         ? AS 'period', \
                         reimbursement_dateApproved AS 'date', \
                         0 AS 'credit', \
-                        reimbursement_sum AS 'debit', \
+                        SUM(l.reimbLineItem_amount) AS 'debit', \
                         'Reimbursement' AS 'type', \
                         reimbursement_description AS 'description' \
                     FROM \
-                        nss_reimb_reimbursement \
+                        nss_reimb_reimbursement AS r \
+                        JOIN nss_reimb_reimblineitem AS l \
+                            ON r.reimbursement_id = l.reimbursement_id \
+                            AND l.reimbLineItem_isApproved = 1 \
+                        \
+                        LEFT JOIN nss_reimb_glbatch AS gl \
+                            ON r.glbatch_id = gl.glbatch_id \
                     WHERE \
-                        nssren_id = ? \
-                        AND requestcutoff_id = ? \
-                        AND reimbursement_status NOT IN ( \
-                            'Rejected', 'Draft' \
+                        r.nssren_id = ? \
+                        AND r.reimbursement_status IN ( \
+                            'Approved_nsc', 'Paid', \
+                            'Pending_nsc', 'Pending_nss' \
                         ) \
+                        AND ( \
+                            r.glbatch_id = 0 \
+                            OR gl.glbatch_period > ? \
+                        ) \
+                    GROUP BY \
+                        r.reimbursement_id \
                     \
-                ", [period, nssrenID, periodID], function(err, results) {
+                ", [period, nssrenID, balancePeriod], function(err, results) {
                     if (err) next(err);
                     else {
                         for (var i=0; i<results.length; i++) {
@@ -403,7 +536,10 @@ module.exports = {
                 });
             }],
             
-            'reimbAdvances': ['getPeriod', 'charset', function(next) {
+            'reimbAdvances': ['getPeriod', 'balancePeriod', 'charset', function(next) {
+                // Reimbursement advances are counted based solely on their
+                // status. It doesn't matter what period they are from or
+                // whether they have been exported to a GL batch yet or not.
                 LNSSRen.query(" \
                     SELECT \
                         CONCAT('reimbAdv-', advance_id) AS 'id', \
@@ -414,13 +550,12 @@ module.exports = {
                         'Reimbursement Advance' AS 'type', \
                         advance_purpose AS 'description' \
                     FROM \
-                        nss_reimb_advance \
+                        nss_reimb_advance AS ra \
                     WHERE \
                         nssren_id = ? \
                         AND advance_status IN ( \
                             'Pending_nss', 'Approved', 'Paid' \
                         ) \
-                    \
                 ", [period, nssrenID], function(err, results) {
                     if (err) next(err);
                     else {
@@ -435,7 +570,7 @@ module.exports = {
                 });
             }],
 
-            'donations': ['getPeriod', 'charset', function(next) {
+            'donations': ['getPeriod', 'balancePeriod', 'charset', function(next) {
                 LNSSRen.query(" \
                     SELECT \
                         d.* \
@@ -450,7 +585,7 @@ module.exports = {
                             d.glbatch_id = 0 \
                             OR gl.glbatch_period > ? \
                         ) \
-                ", [nssrenID, period], function(err, results) {
+                ", [nssrenID, balancePeriod], function(err, results) {
                     if (err) next(err);
                     else {
                         for (var i=0; i<results.length; i++) {
@@ -481,7 +616,13 @@ module.exports = {
                 });
             }],
             
-            'transfers': ['getPeriod', 'charset', function(next) {
+            'transfers': ['getPeriod', 'balancePeriod', 'charset', function(next) {
+                // Find all incoming & outgoing transfers involving this staff,
+                // that have not yet been included in the GL balance.
+                // Outgoing transfers are counted if Scheduled or Completed.
+                // Incoming transfers are counted only if Completed.
+                // Recipient may sometimes be "Other", not tied to any local
+                // staff account.
                 LNSSRen.query(" \
                     SELECT \
                         t.*, \
@@ -490,6 +631,7 @@ module.exports = {
                     FROM \
                         nss_don_transfer t \
                         \
+                        -- Sender -- \n\
                         JOIN nss_core_ren nr1 \
                             ON t.sender_nssren_id = nr1.nssren_id \
                         JOIN "+hris+".hris_ren_data r1 \
@@ -499,13 +641,14 @@ module.exports = {
                         JOIN "+hris+".hris_account acc1 \
                             ON w1.account_id = acc1.account_id \
                         \
-                        JOIN nss_core_ren nr2 \
+                        -- Recipient -- \n\
+                        LEFT JOIN nss_core_ren nr2 \
                             ON t.receiver_nssren_id = nr2.nssren_id \
-                        JOIN "+hris+".hris_ren_data r2 \
+                        LEFT JOIN "+hris+".hris_ren_data r2 \
                             ON nr2.ren_guid = r2.ren_guid \
-                        JOIN "+hris+".hris_worker w2 \
+                        LEFT JOIN "+hris+".hris_worker w2 \
                             ON r2.ren_id = w2.ren_id \
-                        JOIN "+hris+".hris_account acc2 \
+                        LEFT JOIN "+hris+".hris_account acc2 \
                             ON w2.account_id = acc2.account_id \
                         \
                         LEFT JOIN nss_don_glbatch as gl \
@@ -519,9 +662,9 @@ module.exports = {
                             AND transfer_status = 'Completed' \
                         ) OR ( \
                             sender_nssren_id = ? \
-                            AND transfer_status NOT IN ('Suspend', 'Canceled') \
+                            AND transfer_status IN ('Scheduled', 'Completed') \
                         )) \
-                ", [period, nssrenID, nssrenID], function(err, results) {
+                ", [balancePeriod, nssrenID, nssrenID], function(err, results) {
                     if (err) next(err);
                     else {
                         for (var i=0; i<results.length; i++) {
@@ -533,12 +676,13 @@ module.exports = {
                                     type: 'Account Transfer ',
                                     description: row.transfer_type // monthly / one-time
                             };
+                            var recipient = row.recipient_account || 'Other';
                             if (row.sender_nssren_id == nssrenID) {
                                 packet.credit = 0;
                                 packet.debit = row.transfer_amount;
                                 packet.type += 'sent';
                                 if (row.transfer_anonymous == 0) {
-                                    packet.description += ' transfer to ' + row.recipient_account;
+                                    packet.description += ' transfer to ' + recipient;
                                 } else {
                                     packet.description = 'Anonymous';
                                 }
@@ -562,7 +706,7 @@ module.exports = {
             }],
             
             'revertCharset': [
-                'reimbursements', 'reimbAdvances', 'donations', 'transfers',
+                'adjustments', 'reimbursements', 'reimbAdvances', 'donations', 'transfers',
                 function(next) {
                     LNSSRen.query("SET NAMES utf8", function(err, results) {
                         if (err) next(err);
@@ -582,7 +726,6 @@ module.exports = {
     
     /**
      * Stewardwise & HRIS info of all active staff
-     * {
      *    [ 
      *      {
      *        "name": <string>,         // Surname, Given name (Preferred)
@@ -602,7 +745,6 @@ module.exports = {
      *      },
      *      ...
      *    ]
-     * }
      *
      * @param string regionCode
      *      Optional. Only fetch staff from this territory region.
