@@ -494,7 +494,7 @@ module.exports = {
         LNSSCoreGLTrans.query(" \
             SELECT \
                 gltran_subacctnum AS account, \
-                ROUND((SUM(gltran_dramt) + SUM(gltran_cramt)) / 12) AS avgForeignContrib \
+                ROUND(SUM(gltran_cramt - gltran_dramt) / 12) AS avgForeignContrib \
             FROM \
                 nss_core_gltran \
             WHERE \
