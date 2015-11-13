@@ -419,8 +419,8 @@ module.exports = {
     
     
     /**
-     * The average amount of funds added from foreign sources per month,
-     * over the past twelve months, for all staff.
+     * The average amount of monthly salary over the past 12 months, for all
+     * staff.
      *
      * {
      *    <staff account>: <avgSalary>,
@@ -432,7 +432,7 @@ module.exports = {
      *      Format: YYYYMM
      * @return Deferred
      */
-    avgForeignContrib: function(startingPeriod) {
+    avgSalary: function(startingPeriod) {
         var dfd = AD.sal.Deferred();
         
         // gltran_acctnum meanings:
@@ -475,8 +475,8 @@ module.exports = {
     
     
     /**
-     * The average amount of monthly salary over the past 12 months, for all
-     * staff.
+     * The average amount of funds added from foreign sources per month,
+     * over the past twelve months, for all staff.
      *
      * {
      *    <staff account>: <avgSalary>,
@@ -488,7 +488,7 @@ module.exports = {
      *      Format: YYYYMM
      * @return Deferred
      */
-    avgSalary: function(startingPeriod) {
+    avgForeignContrib: function(startingPeriod) {
         var dfd = AD.sal.Deferred();
         
         LNSSCoreGLTrans.query(" \
