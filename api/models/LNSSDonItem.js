@@ -115,7 +115,7 @@ module.exports = {
                 batch.nssren_id = ? \
                 AND item.donor_id = ? \
             ORDER BY \
-                item.donItem_dateReceived \
+                item.donItem_dateReceived DESC \
             \
             " + limitClause + " \
         ", [nssRenID, donorID, limit], function(err, results) {
