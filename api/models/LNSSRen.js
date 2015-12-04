@@ -607,7 +607,7 @@ module.exports = {
                                 date: row.donBatch_dateProcessed,
                                 credit: 0,
                                 debit: row.donBatch_fee,
-                                type: 'Assessment',
+                                type: 'Donation Assessment',
                                 description: 'DN' + row.donBatch_id + ' assessment'
                             });
                         }
@@ -741,7 +741,8 @@ module.exports = {
      *        "regionHRIS": <string>,   // derived from HRIS team location
      *        "location_id": <integer>,
      *        "ren_guid": <string>,
-     *        "nssren_id": <integer>
+     *        "nssren_id": <integer>,
+     *        "mpdGoal": <integer>,     // Family's MPD goal amount
      *      },
      *      ...
      *    ]
@@ -798,6 +799,7 @@ module.exports = {
                         ) AS region, \
                         GROUP_CONCAT(t.territory_desc SEPARATOR ', ') AS territory, \
                         r.ren_isfamilypoc AS isPOC, \
+                        g.goal_mpd AS mpdGoal, \
                         xtl.location_id, \
                         nr.ren_guid, \
                         nr.nssren_id \
@@ -834,6 +836,9 @@ module.exports = {
                             ON asgn.team_id = asgn_t.team_id \
                         LEFT JOIN "+hris+".hris_xref_team_location AS xtl \
                             ON asgn.team_id = xtl.team_id \
+                        \
+                        LEFT JOIN "+hris+".hris_familyGoal AS g \
+                            ON r.family_id = g.family_id \
                     \
                     GROUP BY \
                         r.ren_id \
@@ -896,7 +901,7 @@ module.exports = {
             var byAccount = {};
             for (var i=0; i<list.length; i++) {
                 var account = parseInt(list[i].accountNum);
-                if (!byAccount[account] || list[i].poc) {
+                if (!byAccount[account] || list[i].isPOC) {
                     byAccount[account] = list[i];
                 }
             }
@@ -905,5 +910,6 @@ module.exports = {
         
         return dfd;
     }
+    
 };
 
