@@ -278,11 +278,11 @@ module.exports = {
     
     
     /**
-     * Average amount of funds leaving the account per month, over the past
-     * twelve months, of all staff.
+     * Total amount of funds leaving the account per month, over the past
+     * twelve months, of each staff.
      *
      * {
-     *    <staff account>: <avgExpenditure>,
+     *    <staff account>: <sumExpenditure>,
      *    ...
      * }
      *
@@ -291,13 +291,13 @@ module.exports = {
      *      Format: YYYYMM
      * @return Deferred
      */
-    avgMonthlyExpenditure: function(startingPeriod) {
+    sumExpenditure: function(startingPeriod) {
         var dfd = AD.sal.Deferred();
         
         LNSSCoreGLTrans.query(" \
             SELECT \
                 gltran_subacctnum AS account, \
-                ROUND(SUM(gltran_dramt) / 12) AS avgExpenditure \
+                SUM(gltran_dramt) AS sumExpenditure \
             FROM \
                 nss_core_gltran \
             WHERE \
@@ -313,8 +313,7 @@ module.exports = {
                 var resultsByAccount = {};
                 for (var i=0; i<results.length; i++) {
                     var account = results[i].account;
-                    var avgExpenditure = results[i].avgExpenditure;
-                    resultsByAccount[account] = avgExpenditure;
+                    resultsByAccount[account] = results[i].sumExpenditure;
                 }
                 dfd.resolve(resultsByAccount);
             }
@@ -325,11 +324,11 @@ module.exports = {
     
     
     /**
-     * Average amount of funds entering the account per month, over the past
-     * twelve months, of all staff.
+     * Total amount of funds entering the account per month, over the past
+     * twelve months, of each staff.
      *
      * {
-     *    <staff account>: <avgIncome>,
+     *    <staff account>: <sumIncome>,
      *    ...
      * }
      *
@@ -338,13 +337,13 @@ module.exports = {
      *      Format: YYYYMM
      * @return Deferred
      */
-    avgMonthlyIncome: function(startingPeriod) {
+    sumIncome: function(startingPeriod) {
         var dfd = AD.sal.Deferred();
         
         LNSSCoreGLTrans.query(" \
             SELECT \
                 gltran_subacctnum AS account, \
-                ROUND(SUM(gltran_cramt) / 12) AS avgIncome \
+                SUM(gltran_cramt) AS sumIncome \
             FROM \
                 nss_core_gltran \
             WHERE \
@@ -360,8 +359,7 @@ module.exports = {
                 var resultsByAccount = {};
                 for (var i=0; i<results.length; i++) {
                     var account = results[i].account;
-                    var avgIncome = results[i].avgIncome;
-                    resultsByAccount[account] = avgIncome;
+                    resultsByAccount[account] = results[i].sumIncome;
                 }
                 dfd.resolve(resultsByAccount);
             }
@@ -372,11 +370,11 @@ module.exports = {
     
     
     /**
-     * The average amount of funds added from local sources per month,
-     * over the past twelve months, for all staff.
+     * The amount of funds added from local sources per month,
+     * over the past twelve months, for each staff.
      *
      * {
-     *    <staff account>: <avgLocalContrib>,
+     *    <staff account>: <sumLocalContrib>,
      *    ...
      * }
      *
@@ -385,13 +383,13 @@ module.exports = {
      *      Format: YYYYMM
      * @return Deferred
      */
-    avgLocalContrib: function(startingPeriod) {
+    sumLocalContrib: function(startingPeriod) {
         var dfd = AD.sal.Deferred();
         
         LNSSCoreGLTrans.query(" \
             SELECT \
                 gltran_subacctnum AS account, \
-                ROUND(SUM(gltran_cramt - gltran_dramt) / 12) AS avgLocalContrib \
+                SUM(gltran_cramt - gltran_dramt) AS sumLocalContrib \
             FROM \
                 nss_core_gltran \
             WHERE \
@@ -407,8 +405,7 @@ module.exports = {
                 var resultsByAccount = {};
                 for (var i=0; i<results.length; i++) {
                     var account = results[i].account;
-                    var avgLocalContrib = results[i].avgLocalContrib;
-                    resultsByAccount[account] = avgLocalContrib;
+                    resultsByAccount[account] = results[i].sumLocalContrib;
                 }
                 dfd.resolve(resultsByAccount);
             }
@@ -419,11 +416,11 @@ module.exports = {
     
     
     /**
-     * The average amount of monthly salary over the past 12 months, for all
+     * The sum amount of monthly salary over the past 12 months, for each
      * staff.
      *
      * {
-     *    <staff account>: <avgSalary>,
+     *    <staff account>: <sumSalary>,
      *    ...
      * }
      *
@@ -432,7 +429,7 @@ module.exports = {
      *      Format: YYYYMM
      * @return Deferred
      */
-    avgSalary: function(startingPeriod) {
+    sumSalary: function(startingPeriod) {
         var dfd = AD.sal.Deferred();
         
         // gltran_acctnum meanings:
@@ -442,12 +439,10 @@ module.exports = {
         //  1210 - correction to ytd salary
         // so i guess we just count the 7000 transactions?
         
-        // Total up all the base salary, adjustment credits and debits
-        // and divide by 12.
         LNSSCoreGLTrans.query(" \
             SELECT \
                 gltran_subacctnum AS account, \
-                ROUND((SUM(gltran_dramt) + SUM(gltran_cramt)) / 12) AS avgSal \
+                SUM(gltran_cramt - gltran_dramt) AS sumSal \
             FROM \
                 nss_core_gltran \
             WHERE \
@@ -463,8 +458,7 @@ module.exports = {
                 var resultsByAccount = {};
                 for (var i=0; i<results.length; i++) {
                     var account = results[i].account;
-                    var avgSalary = results[i].avgSal;
-                    resultsByAccount[account] = avgSalary;
+                    resultsByAccount[account] = results[i].sumSal;
                 }
                 dfd.resolve(resultsByAccount);
             }
@@ -475,11 +469,11 @@ module.exports = {
     
     
     /**
-     * The average amount of funds added from foreign sources per month,
-     * over the past twelve months, for all staff.
+     * The amount of funds added from foreign sources per month,
+     * over the past twelve months, for each staff.
      *
      * {
-     *    <staff account>: <avgSalary>,
+     *    <staff account>: <sumForeignContrib>,
      *    ...
      * }
      *
@@ -488,13 +482,13 @@ module.exports = {
      *      Format: YYYYMM
      * @return Deferred
      */
-    avgForeignContrib: function(startingPeriod) {
+    sumForeignContrib: function(startingPeriod) {
         var dfd = AD.sal.Deferred();
         
         LNSSCoreGLTrans.query(" \
             SELECT \
                 gltran_subacctnum AS account, \
-                ROUND(SUM(gltran_cramt - gltran_dramt) / 12) AS avgForeignContrib \
+                SUM(gltran_cramt - gltran_dramt) AS sumForeignContrib \
             FROM \
                 nss_core_gltran \
             WHERE \
@@ -510,8 +504,7 @@ module.exports = {
                 var resultsByAccount = {};
                 for (var i=0; i<results.length; i++) {
                     var account = results[i].account;
-                    var avgForeignContrib = results[i].avgForeignContrib;
-                    resultsByAccount[account] = avgForeignContrib;
+                    resultsByAccount[account] = results[i].sumForeignContrib;
                 }
                 dfd.resolve(resultsByAccount);
             }
