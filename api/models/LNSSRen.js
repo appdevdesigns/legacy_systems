@@ -743,6 +743,8 @@ module.exports = {
      *        "ren_guid": <string>,
      *        "nssren_id": <integer>,
      *        "mpdGoal": <integer>,     // Family's MPD goal amount
+     *        "dateJoined": <string>,   // date when joined staff
+     *        "periodJoined": <string>, // fiscal period when joined staff
      *      },
      *      ...
      *    ]
@@ -800,6 +802,13 @@ module.exports = {
                         GROUP_CONCAT(t.territory_desc SEPARATOR ', ') AS territory, \
                         r.ren_isfamilypoc AS isPOC, \
                         g.goal_mpd AS mpdGoal, \
+                        w.worker_dateJoinedStaff AS dateJoined, \
+                        PERIOD_ADD( \
+                            CONCAT( \
+                                LEFT(w.worker_dateJoinedStaff, 4), \
+                                SUBSTR(w.worker_dateJoinedStaff, 6, 2) \
+                            ), 6 \
+                        ) AS periodJoined, \
                         xtl.location_id, \
                         nr.ren_guid, \
                         nr.nssren_id \
