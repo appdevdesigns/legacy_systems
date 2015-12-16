@@ -756,6 +756,7 @@ module.exports = {
     staffInfo: function(regionCode) {
         var dfd = AD.sal.Deferred();
         var hris = sails.config.connections.legacy_hris.database;
+        var site = sails.config.connections.legacy_stewardwise.database;
         if (!hris) {
             throw new Error('legacy_hris connection not defined in the config');
         }
@@ -765,7 +766,7 @@ module.exports = {
         async.series([
             function(next) {
                 // HRIS uses utf8 encoding
-                LNSSRen.query("SET NAMES utf8", function(err) {
+                LHRISRen.query("SET NAMES utf8", function(err) {
                     if (err) next(err);
                     else next();
                 });
@@ -780,7 +781,7 @@ module.exports = {
                     havingClause = " HAVING region = ? ";
                 }
                 
-                LNSSRen.query(" \
+                LHRISRen.query(" \
                     SELECT \
                         CONCAT( \
                             r.ren_surname, ', ', r.ren_givenname, \
@@ -815,7 +816,7 @@ module.exports = {
                     \
                     FROM \
                         "+hris+".hris_ren_data AS r \
-                        JOIN nss_core_ren AS nr \
+                        JOIN "+site+".nss_core_ren AS nr \
                             ON nr.ren_guid = r.ren_guid \
                             AND nr.nssren_isActive = 1 \
                         \
@@ -824,9 +825,9 @@ module.exports = {
                         JOIN "+hris+".hris_account AS a \
                             ON w.account_id = a.account_id \
                         \
-                        JOIN nss_core_renterritory AS rt \
+                        JOIN "+site+".nss_core_renterritory AS rt \
                             ON nr.nssren_id = rt.nssren_id \
-                        JOIN nss_core_territory AS t \
+                        JOIN "+site+".nss_core_territory AS t \
                             ON rt.territory_id = t.territory_id \
                         \
                         LEFT JOIN "+hris+".hris_phone_data AS p \
