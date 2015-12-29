@@ -114,8 +114,12 @@ module.exports = {
         toJSON: function() {
             var obj = this.toObject();
             
-            // Decode Chinese HTML entities
-            obj.donors_chineseName = entities.decode(this.donors_chineseName);
+            // Decode HTML entities
+            for (var key in obj) {
+                if (obj[key].length) {
+                    obj[key] = entities.decode(obj[key]);
+                }
+            }
             
             // Donor type
             var types = {
