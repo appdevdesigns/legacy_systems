@@ -44,12 +44,12 @@ module.exports = {
 
         donBatch_dateCreated : {
             type : "date",
-            defaultsTo : "0000-00-00"
+            //defaultsTo : "0000-00-00"
         }, 
 
         donBatch_dateProcessed : {
             type : "date",
-            defaultsTo : "0000-00-00",
+            //defaultsTo : "0000-00-00",
             required:false
         }, 
 
