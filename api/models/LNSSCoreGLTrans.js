@@ -289,10 +289,14 @@ module.exports = {
      * @param string startingPeriod
      *      The gltran_perpost period from 12 months ago.
      *      Format: YYYYMM
+     * @param string account
+     *      Optional. Only find staff accounts like this.
+     *      Default is '10____'.
      * @return Deferred
      */
-    sumExpenditure: function(startingPeriod) {
+    sumExpenditure: function(startingPeriod, account) {
         var dfd = AD.sal.Deferred();
+        var account = account || '10____';
         
         LNSSCoreGLTrans.query(" \
             SELECT \
@@ -303,10 +307,10 @@ module.exports = {
             WHERE \
                 gltran_perpost > ? \
                 AND gltran_dramt > 0 \
-                AND gltran_subacctnum LIKE '10____' \
+                AND gltran_subacctnum LIKE ? \
             GROUP BY \
                 gltran_subacctnum \
-        ", [startingPeriod], function(err, results) {
+        ", [startingPeriod, account], function(err, results) {
             if (err) {
                 dfd.reject(err);
             } else {
@@ -335,10 +339,14 @@ module.exports = {
      * @param string startingPeriod
      *      The gltran_perpost period from 12 months ago.
      *      Format: YYYYMM
+     * @param string account
+     *      Optional. Only find staff accounts like this.
+     *      Default is '10____'.
      * @return Deferred
      */
-    sumIncome: function(startingPeriod) {
+    sumIncome: function(startingPeriod, account) {
         var dfd = AD.sal.Deferred();
+        var account = account || '10____';
         
         LNSSCoreGLTrans.query(" \
             SELECT \
@@ -349,10 +357,10 @@ module.exports = {
             WHERE \
                 gltran_perpost > ? \
                 AND gltran_cramt > 0 \
-                AND gltran_subacctnum LIKE '10____' \
+                AND gltran_subacctnum LIKE ? \
             GROUP BY \
                 gltran_subacctnum \
-        ", [startingPeriod], function(err, results) {
+        ", [startingPeriod, account], function(err, results) {
             if (err) {
                 dfd.reject(err);
             } else {
@@ -381,10 +389,14 @@ module.exports = {
      * @param string startingPeriod
      *      The gltran_perpost period from 12 months ago.
      *      Format: YYYYMM
+     * @param string account
+     *      Optional. Only find staff accounts like this.
+     *      Default is '10____'.
      * @return Deferred
      */
-    sumLocalContrib: function(startingPeriod) {
+    sumLocalContrib: function(startingPeriod, account) {
         var dfd = AD.sal.Deferred();
+        var account = account || '10____';
         
         LNSSCoreGLTrans.query(" \
             SELECT \
@@ -395,10 +407,10 @@ module.exports = {
             WHERE \
                 gltran_perpost > ? \
                 AND gltran_acctnum IN ('4000', '4010') \
-                AND gltran_subacctnum LIKE '10____' \
+                AND gltran_subacctnum LIKE ? \
             GROUP BY \
                 gltran_subacctnum \
-        ", [startingPeriod], function(err, results) {
+        ", [startingPeriod, account], function(err, results) {
             if (err) {
                 dfd.reject(err);
             } else {
@@ -427,10 +439,14 @@ module.exports = {
      * @param string startingPeriod
      *      The gltran_perpost period from 12 months ago.
      *      Format: YYYYMM
+     * @param string account
+     *      Optional. Only find staff accounts like this.
+     *      Default is '10____'.
      * @return Deferred
      */
-    sumSalary: function(startingPeriod) {
+    sumSalary: function(startingPeriod, account) {
         var dfd = AD.sal.Deferred();
+        var account = account || '10____';
         
         // gltran_acctnum meanings:
         //  7000 - salary, additional salary, short pay, reduce ytd salary paid
@@ -448,10 +464,10 @@ module.exports = {
             WHERE \
                 gltran_perpost > ? \
                 AND gltran_acctnum IN ('7000') \
-                AND gltran_subacctnum LIKE '10____' \
+                AND gltran_subacctnum LIKE ? \
             GROUP BY \
                 gltran_subacctnum \
-        ", [startingPeriod], function(err, results) {
+        ", [startingPeriod, account], function(err, results) {
             if (err) {
                 dfd.reject(err);
             } else {
@@ -480,10 +496,14 @@ module.exports = {
      * @param string startingPeriod
      *      The gltran_perpost period from 12 months ago.
      *      Format: YYYYMM
+     * @param string account
+     *      Optional. Only find staff accounts like this.
+     *      Default is '10____'.
      * @return Deferred
      */
-    sumForeignContrib: function(startingPeriod) {
+    sumForeignContrib: function(startingPeriod, account) {
         var dfd = AD.sal.Deferred();
+        var account = account || '10____';
         
         LNSSCoreGLTrans.query(" \
             SELECT \
@@ -494,10 +514,10 @@ module.exports = {
             WHERE \
                 gltran_perpost > ? \
                 AND gltran_acctnum = '5000' \
-                AND gltran_subacctnum LIKE '10____' \
+                AND gltran_subacctnum LIKE ? \
             GROUP BY \
                 gltran_subacctnum \
-        ", [startingPeriod], function(err, results) {
+        ", [startingPeriod, account], function(err, results) {
             if (err) {
                 dfd.reject(err);
             } else {
@@ -529,10 +549,14 @@ module.exports = {
      * @param string startingPeriod
      *      The gltran_perpost period from 12 months ago.
      *      Format: YYYYMM
+     * @param string account
+     *      Optional. Only find staff accounts like this.
+     *      Default is '10____'.
      * @return Deferred
      */
-    shortPayPeriods: function(startingPeriod) {
+    shortPayPeriods: function(startingPeriod, account) {
         var dfd = AD.sal.Deferred();
+        var account = account || '10____';
         
         LNSSCoreGLTrans.query(" \
             SELECT \
@@ -545,10 +569,10 @@ module.exports = {
                 gltran_perpost > ? \
                 AND gltran_acctnum = '7000' \
                 AND gltran_cramt > 0 \
-                AND gltran_subacctnum LIKE '10____' \
+                AND gltran_subacctnum LIKE ? \
             GROUP BY \
                 gltran_subacctnum \
-        ", [startingPeriod, startingPeriod], function(err, results) {
+        ", [startingPeriod, account], function(err, results) {
             if (err) {
                 dfd.reject(err);
             } else {
@@ -567,6 +591,24 @@ module.exports = {
         });
         
         return dfd;
+    },
+    
+    
+    /**
+     * Compute the number of periods between two yyyymm fiscal periods.
+     *
+     *      p1 - p2
+     *
+     * @param string p1
+     * @param string p2
+     * @return int
+     */
+    periodDiff: function(p1, p2) {
+        var y1 = String(p1).substr(0, 4),
+            m1 = String(p1).substr(4, 2),
+            y2 = String(p2).substr(0, 4),
+            m2 = String(p2).substr(4, 2);
+        return ((y1 - y2) * 12) + (m1 - m2);
     }
     
     

@@ -749,17 +749,32 @@ module.exports = {
      *      ...
      *    ]
      *
-     * @param string regionCode
-     *      Optional. Only fetch staff from this territory region.
+     * @param object options
+     *      - regionCode
+     *          Optional. Only fetch staff from this territory region.
+     *      - nssrenID
+     *          Optional. Only fetch the staff with this nssren_id.
      * @return Deferred
      */
-    staffInfo: function(regionCode) {
+    staffInfo: function(options) {
         var dfd = AD.sal.Deferred();
         var hris = sails.config.connections.legacy_hris.database;
         var site = sails.config.connections.legacy_stewardwise.database;
         if (!hris) {
             throw new Error('legacy_hris connection not defined in the config');
         }
+        
+        if (typeof options == 'string') {
+            // For backwards compatibility from when regionCode was the
+            // only function argument.
+            options = {};
+            var regionCode = options;
+        }
+        else {
+            options = options || {};
+            var regionCode = options.regionCode || null;
+        }
+        var nssrenID = options.nssrenID || null;
         
         var staff = [];
         
@@ -773,13 +788,24 @@ module.exports = {
             },
             
             function(next) {
+                var sqlParams = [];
+                
+                // If nssrenID was specified, then filter results by adding a
+                // WHERE clause to the sql.
+                var whereClause = "";
+                if (nssrenID) {
+                    whereClause = " WHERE nr.nssren_id = ? ";
+                }
+                sqlParams.push(nssrenID);
+                
+                
                 // If region was specified, then filter results by adding a
                 // HAVING clause to the sql.
-                var regionCode = regionCode || null;
                 var havingClause = "";
                 if (typeof regionCode == 'string') {
                     havingClause = " HAVING region = ? ";
                 }
+                sqlParams.push(regionCode);
                 
                 LHRISRen.query(" \
                     SELECT \
@@ -850,12 +876,14 @@ module.exports = {
                         LEFT JOIN "+hris+".hris_familyGoal AS g \
                             ON r.family_id = g.family_id \
                     \
+                    "+ whereClause +" \
+                    \
                     GROUP BY \
                         r.ren_id \
                     \
                     "+ havingClause +" \
                     \
-                ", [regionCode], function(err, results) {
+                ", sqlParams, function(err, results) {
                     if (err) {
                         next(err);
                     } else {
@@ -905,7 +933,7 @@ module.exports = {
     staffInfoByAccount: function(regionCode) {
         var dfd = AD.sal.Deferred();
         
-        LNSSRen.staffInfo(regionCode)
+        LNSSRen.staffInfo({ regionCode: regionCode })
         .fail(dfd.reject)
         .done(function(list) {
             var byAccount = {};
