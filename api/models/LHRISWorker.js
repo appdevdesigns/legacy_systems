@@ -76,14 +76,24 @@ module.exports = {
             SELECT \
                 CONCAT(r.ren_surname, ', ', r.ren_givenname) AS 'Name', \
                 a.account_number AS 'Account Number', \
-                GROUP_CONCAT( p.phone_number, ' (', SUBSTRING(pt.phonetype_label, 1, 1), ')' ) AS 'Phone', \
-                e.email_address AS 'Email', \
+                GROUP_CONCAT( DISTINCT \
+                    p.phone_number, \
+                    ' (', \
+                    SUBSTRING(pt.phonetype_label, 1, 1), \
+                    ')' \
+                    SEPARATOR ', ' \
+                ) AS 'Phone', \
+                GROUP_CONCAT( DISTINCT \
+                    e.email_address \
+                    SEPARATOR ', ' \
+                ) AS 'Email', \
+                r.ren_isfamilypoc AS 'isPOC', \
                 lt.location_id \
             \
             FROM \
                 hris_country_data cd \
                 JOIN hris_account a \
-                    ON cd.country_code LIKE '" + countryCode + "' \
+                    ON cd.country_code LIKE ? \
                     AND a.country_id = cd.country_id \
                 \
                 JOIN hris_worker w \
@@ -113,7 +123,7 @@ module.exports = {
             \
             GROUP BY \
                 r.ren_id \
-        ", function(err, results) {
+        ", [ countryCode ], function(err, results) {
             if (err) {
                 dfd.reject(err);
             } else {
@@ -161,7 +171,7 @@ module.exports = {
                 var workersByAccount = {};
                 for (var i=0; i<workers.length; i++) {
                     var locationID = workers[i].location_id;
-                    var accountNum = parseInt(workers[i]['Account Number'].replace(/\D/, ''));
+                    var accountNum = parseInt(workers[i]['Account Number'].replace(/\D/g, ''));
                     if (locations[locationID]) {
                         var regionID = locations[locationID].region_location_id;
                         var regionLabel = regions[regionID].name;
@@ -169,6 +179,20 @@ module.exports = {
                         var regionLabel = 'none';
                     }
                     workers[i].Region = regionLabel;
+                    
+                    // Merge info for married couples
+                    if (workersByAccount[accountNum]) {
+                        var spouseInfo = workersByAccount[accountNum];
+                        for (var key in spouseInfo) {
+                            var thisValue = workers[i][key];
+                            var spouseValue = spouseInfo[key];
+                            // Use spouse's value if spouse is POC, or if only
+                            // spouse has a value in that field.
+                            if (!thisValue || spouseInfo.isPOC && spouseValue) {
+                                workers[i][key] = spouseValue;
+                            }
+                        }
+                    }
                     
                     // Grouped by region
                     workersByRegion[regionLabel] = workersByRegion[regionLabel] || {};
