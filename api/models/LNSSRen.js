@@ -815,18 +815,23 @@ module.exports = {
                         ) AS name, \
                         r.ren_namecharacters AS chineseName, \
                         REPLACE(a.account_number, '-', '') AS accountNum, \
+                        \
                         nr.nssren_salaryAmount AS baseSalary, \
                         nr.nssren_ytdBalance AS accountBal, \
+                        \
                         e.email_address AS email, \
                         GROUP_CONCAT(DISTINCT \
                             p.phone_number, ' (', \
                             SUBSTRING(ptt.phonetype_label, 1, 1), ')' \
                             SEPARATOR ', ' \
                         ) AS phone, \
+                        \
                         SUBSTRING( \
                             t.territory_desc, 1, LOCATE('-', t.territory_desc)-1 \
                         ) AS region, \
                         GROUP_CONCAT(t.territory_desc SEPARATOR ', ') AS territory, \
+                        srt.sendingregion_label AS sendingRegion, \
+                        \
                         r.ren_isfamilypoc AS isPOC, \
                         g.goal_mpd AS mpdGoal, \
                         w.worker_dateJoinedStaff AS dateJoined, \
@@ -855,6 +860,10 @@ module.exports = {
                             ON nr.nssren_id = rt.nssren_id \
                         JOIN "+site+".nss_core_territory AS t \
                             ON rt.territory_id = t.territory_id \
+                        \
+                        LEFT JOIN "+hris+".hris_sendingregion_trans srt \
+                            ON w.sendingregion_id = srt.sendingregion_id \
+                            AND srt.language_code = 'mpd' \
                         \
                         LEFT JOIN "+hris+".hris_phone_data AS p \
                             ON r.ren_id = p.ren_id \
