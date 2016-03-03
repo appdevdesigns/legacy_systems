@@ -767,8 +767,8 @@ module.exports = {
         if (typeof options == 'string') {
             // For backwards compatibility from when regionCode was the
             // only function argument.
-            options = {};
             var regionCode = options;
+            options = {};
         }
         else {
             options = options || {};
@@ -795,8 +795,8 @@ module.exports = {
                 var whereClause = "";
                 if (nssrenID) {
                     whereClause = " WHERE nr.nssren_id = ? ";
+                    sqlParams.push(nssrenID);
                 }
-                sqlParams.push(nssrenID);
                 
                 
                 // If region was specified, then filter results by adding a
@@ -804,8 +804,8 @@ module.exports = {
                 var havingClause = "";
                 if (typeof regionCode == 'string') {
                     havingClause = " HAVING region = ? ";
+                    sqlParams.push(regionCode);
                 }
-                sqlParams.push(regionCode);
                 
                 LHRISRen.query(" \
                     SELECT \
