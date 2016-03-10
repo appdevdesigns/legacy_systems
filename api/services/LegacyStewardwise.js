@@ -1267,7 +1267,10 @@ var Helper = {
         if (accountTrend >= 0) {
             monthsTilDeficit = 'NA';
         } else {
-            monthsTilDeficit = Math.ceil(options.accountBalance / (accountTrend * -1));
+            //monthsTilDeficit = Math.ceil(options.accountBalance / (accountTrend * -1));
+            monthsTilDeficit = options.accountBalance / (accountTrend * -1);
+            // Round up to 1 decimal place
+            monthsTilDeficit = Math.round(monthsTilDeficit * 10) / 10;
             if (monthsTilDeficit >= 13) {
                 monthsTilDeficit = 'NA';
             }
