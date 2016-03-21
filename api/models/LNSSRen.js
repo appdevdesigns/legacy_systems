@@ -705,16 +705,6 @@ module.exports = {
                 });
             }],
             
-            'revertCharset': [
-                'adjustments', 'reimbursements', 'reimbAdvances', 'donations', 'transfers',
-                function(next) {
-                    LNSSRen.query("SET NAMES utf8", function(err, results) {
-                        if (err) next(err);
-                        else next();
-                    });
-                }
-            ],
-            
         }, function(err) {
             if (err) dfd.reject(err);
             else dfd.resolve(transactions);
