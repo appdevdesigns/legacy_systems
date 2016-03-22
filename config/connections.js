@@ -49,7 +49,8 @@ module.exports = {
         // Psst.. You can put your password in config/local.js instead
         // so you don't inadvertently push it up if you're using version control
         password: '....',
-        database: '....'
+        database: '....',
+        charset: 'utf8'
     },
 
         // The connection settings to connect to HRiS data.
@@ -61,7 +62,8 @@ module.exports = {
         // Psst.. You can put your password in config/local.js instead
         // so you don't inadvertently push it up if you're using version control
         password: '....',
-        database: '....'
+        database: '....',
+        charset: 'latin1'
     },
 
 
