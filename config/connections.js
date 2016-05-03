@@ -42,7 +42,7 @@ module.exports = {
 */
     // The connection settings to connect to HRiS data.
     legacy_hris: {
-        module: 'sails-mysql',
+        adapter: 'sails-mysql',
         host: '....',
         port: '....',
         user: '....',
@@ -55,7 +55,7 @@ module.exports = {
 
         // The connection settings to connect to HRiS data.
     legacy_stewardwise: {
-        module: 'sails-mysql',
+        adapter: 'sails-mysql',
         host: '....',
         port: '....',
         user: '....',
