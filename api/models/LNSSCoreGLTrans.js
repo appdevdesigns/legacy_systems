@@ -316,6 +316,7 @@ module.exports = {
                     AND gltran_subacctnum LIKE ? \
                     AND gltran_acctnum >= 6000 \
                     AND gltran_acctnum != 8100 \
+                    AND gltran_acctnum < 8200 \
                 GROUP BY \
                     gltran_subacctnum \
             ",
