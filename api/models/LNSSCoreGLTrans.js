@@ -281,6 +281,9 @@ module.exports = {
      * Total amount of funds leaving the account per month, over the past
      * twelve months, of each staff.
      *
+     * Credits & debits are counted differently depending on the account code.
+     * See Mantis #2924.
+     *
      * {
      *    <staff account>: <sumExpenditure>,
      *    ...
@@ -298,27 +301,60 @@ module.exports = {
         var dfd = AD.sal.Deferred();
         var account = account || '10____';
         
-        LNSSCoreGLTrans.query(" \
-            SELECT \
-                gltran_subacctnum AS account, \
-                SUM(gltran_dramt) AS sumExpenditure \
-            FROM \
-                nss_core_gltran \
-            WHERE \
-                gltran_perpost > ? \
-                AND gltran_dramt > 0 \
-                AND gltran_subacctnum LIKE ? \
-            GROUP BY \
-                gltran_subacctnum \
-        ", [startingPeriod, account], function(err, results) {
+        var resultsByAccount = {};
+        
+        var queries = [
+            // Query 1: debits - credits
+            " \
+                SELECT \
+                    gltran_subacctnum AS account, \
+                    SUM(gltran_dramt - gltran_cramt) AS sumExpenditure \
+                FROM \
+                    nss_core_gltran \
+                WHERE \
+                    gltran_perpost > ? \
+                    AND gltran_subacctnum LIKE ? \
+                    AND gltran_acctnum >= 6000 \
+                    AND gltran_acctnum != 8100 \
+                GROUP BY \
+                    gltran_subacctnum \
+            ",
+            
+            // Query 2: debits only
+            " \
+                SELECT \
+                    gltran_subacctnum AS account, \
+                    SUM(gltran_dramt) AS sumExpenditure \
+                FROM \
+                    nss_core_gltran \
+                WHERE \
+                    gltran_perpost > ? \
+                    AND gltran_subacctnum LIKE ? \
+                    AND gltran_acctnum = 8100 \
+                    AND gltran_dramt > 0 \
+                GROUP BY \
+                    gltran_subacctnum \
+            "
+        ];
+        
+        // Run both queries and group results by staff account number
+        async.forEach(queries, function(sql, next) {
+            LNSSCoreGLTrans
+            .query(sql, [startingPeriod, account], function(err, results) {
+                if (err) next(err);
+                else {
+                    for (var i=0; i<results.length; i++) {
+                        var account = results[i].account;
+                        resultsByAccount[account] = resultsByAccount[account] || 0;
+                        resultsByAccount[account] += results[i].sumExpenditure;
+                    }
+                    next();
+                }
+            });
+        }, function(err) {
             if (err) {
                 dfd.reject(err);
             } else {
-                var resultsByAccount = {};
-                for (var i=0; i<results.length; i++) {
-                    var account = results[i].account;
-                    resultsByAccount[account] = results[i].sumExpenditure;
-                }
                 dfd.resolve(resultsByAccount);
             }
         });
@@ -330,6 +366,9 @@ module.exports = {
     /**
      * Total amount of funds entering the account per month, over the past
      * twelve months, of each staff.
+     *
+     * Credits & debits are counted differently depending on the account code.
+     * See Mantis #2924.
      *
      * {
      *    <staff account>: <sumIncome>,
@@ -348,27 +387,59 @@ module.exports = {
         var dfd = AD.sal.Deferred();
         var account = account || '10____';
         
-        LNSSCoreGLTrans.query(" \
-            SELECT \
-                gltran_subacctnum AS account, \
-                SUM(gltran_cramt) AS sumIncome \
-            FROM \
-                nss_core_gltran \
-            WHERE \
-                gltran_perpost > ? \
-                AND gltran_cramt > 0 \
-                AND gltran_subacctnum LIKE ? \
-            GROUP BY \
-                gltran_subacctnum \
-        ", [startingPeriod, account], function(err, results) {
+        var resultsByAccount = {};
+        
+        var queries = [
+            // Query 1: credits - debits
+            " \
+                SELECT \
+                    gltran_subacctnum AS account, \
+                    SUM(gltran_cramt - gltran_cramt) AS sumIncome \
+                FROM \
+                    nss_core_gltran \
+                WHERE \
+                    gltran_perpost > ? \
+                    AND gltran_subacctnum LIKE ? \
+                    AND gltran_acctnum <= 5780 \
+                GROUP BY \
+                    gltran_subacctnum \
+            ",
+            
+            // Query 2: credits only
+            " \
+                SELECT \
+                    gltran_subacctnum AS account, \
+                    SUM(gltran_cramt) AS sumIncome \
+                FROM \
+                    nss_core_gltran \
+                WHERE \
+                    gltran_perpost > ? \
+                    AND gltran_subacctnum LIKE ? \
+                    AND gltran_acctnum = 8100 \
+                    AND gltran_cramt > 0 \
+                GROUP BY \
+                    gltran_subacctnum \
+            "
+        ];
+        
+        // Run both queries and group results by staff account number
+        async.forEach(queries, function(sql, next) {
+            LNSSCoreGLTrans
+            .query(sql, [startingPeriod, account], function(err, results) {
+                if (err) next(err);
+                else {
+                    for (var i=0; i<results.length; i++) {
+                        var account = results[i].account;
+                        resultsByAccount[account] = resultsByAccount[account] || 0;
+                        resultsByAccount[account] += results[i].sumIncome;
+                    }
+                    next();
+                }
+            });
+        }, function(err) {
             if (err) {
                 dfd.reject(err);
             } else {
-                var resultsByAccount = {};
-                for (var i=0; i<results.length; i++) {
-                    var account = results[i].account;
-                    resultsByAccount[account] = results[i].sumIncome;
-                }
                 dfd.resolve(resultsByAccount);
             }
         });
@@ -380,6 +451,9 @@ module.exports = {
     /**
      * The amount of funds added from local sources per month,
      * over the past twelve months, for each staff.
+     *
+     * Credits & debits are counted differently depending on the account code.
+     * See Mantis #2924.
      *
      * {
      *    <staff account>: <sumLocalContrib>,
@@ -398,27 +472,60 @@ module.exports = {
         var dfd = AD.sal.Deferred();
         var account = account || '10____';
         
-        LNSSCoreGLTrans.query(" \
-            SELECT \
-                gltran_subacctnum AS account, \
-                SUM(gltran_cramt - gltran_dramt) AS sumLocalContrib \
-            FROM \
-                nss_core_gltran \
-            WHERE \
-                gltran_perpost > ? \
-                AND gltran_acctnum IN ('4000', '4010') \
-                AND gltran_subacctnum LIKE ? \
-            GROUP BY \
-                gltran_subacctnum \
-        ", [startingPeriod, account], function(err, results) {
+        var resultsByAccount = {};
+        
+        var queries = [
+            // Query 1: credits - debits
+            " \
+                SELECT \
+                    gltran_subacctnum AS account, \
+                    SUM(gltran_cramt - gltran_dramt) AS sumLocalContrib \
+                FROM \
+                    nss_core_gltran \
+                WHERE \
+                    gltran_perpost > ? \
+                    AND gltran_acctnum >= 4100 \
+                    AND gltran_acctnum <= 4410 \
+                    AND gltran_subacctnum LIKE ? \
+                GROUP BY \
+                    gltran_subacctnum \
+            ",
+            
+            // Query 2: credits only
+            " \
+                SELECT \
+                    gltran_subacctnum AS account, \
+                    SUM(gltran_cramt) AS sumLocalContrib \
+                FROM \
+                    nss_core_gltran \
+                WHERE \
+                    gltran_perpost > ? \
+                    AND gltran_acctnum IN ('8100') \
+                    AND gltran_subacctnum LIKE ? \
+                    AND gltran_cramt > 0 \
+                GROUP BY \
+                    gltran_subacctnum \
+            "
+        ];
+        
+        // Run both queries and group results by staff account number
+        async.forEach(queries, function(sql, next) {
+            LNSSCoreGLTrans
+            .query(sql, [startingPeriod, account], function(err, results) {
+                if (err) next(err);
+                else {
+                    for (var i=0; i<results.length; i++) {
+                        var account = results[i].account;
+                        resultsByAccount[account] = resultsByAccount[account] || 0;
+                        resultsByAccount[account] += results[i].sumLocalContrib;
+                    }
+                    next();
+                }
+            });
+        }, function(err) {
             if (err) {
                 dfd.reject(err);
             } else {
-                var resultsByAccount = {};
-                for (var i=0; i<results.length; i++) {
-                    var account = results[i].account;
-                    resultsByAccount[account] = results[i].sumLocalContrib;
-                }
                 dfd.resolve(resultsByAccount);
             }
         });
@@ -505,31 +612,48 @@ module.exports = {
         var dfd = AD.sal.Deferred();
         var account = account || '10____';
         
-        LNSSCoreGLTrans.query(" \
-            SELECT \
-                gltran_subacctnum AS account, \
-                SUM(gltran_cramt - gltran_dramt) AS sumForeignContrib \
-            FROM \
-                nss_core_gltran \
-            WHERE \
-                gltran_perpost > ? \
-                AND gltran_acctnum = '5000' \
-                AND gltran_subacctnum LIKE ? \
-            GROUP BY \
-                gltran_subacctnum \
-        ", [startingPeriod, account], function(err, results) {
+        var resultsByAccount = {};
+        
+        var queries = [
+            // Query 1: credits - debits
+            " \
+                SELECT \
+                    gltran_subacctnum AS account, \
+                    SUM(gltran_cramt - gltran_dramt) AS sumForeignContrib \
+                FROM \
+                    nss_core_gltran \
+                WHERE \
+                    gltran_perpost > ? \
+                    AND gltran_acctnum >= 5000 \
+                    AND gltran_acctnum <= 5780 \
+                    AND gltran_subacctnum LIKE ? \
+                GROUP BY \
+                    gltran_subacctnum \
+            "
+        ];
+        
+        // Run both queries and group results by staff account number
+        async.forEach(queries, function(sql, next) {
+            LNSSCoreGLTrans
+            .query(sql, [startingPeriod, account], function(err, results) {
+                if (err) next(err);
+                else {
+                    for (var i=0; i<results.length; i++) {
+                        var account = results[i].account;
+                        resultsByAccount[account] = resultsByAccount[account] || 0;
+                        resultsByAccount[account] += results[i].sumForeignContrib;
+                    }
+                    next();
+                }
+            });
+        }, function(err) {
             if (err) {
                 dfd.reject(err);
             } else {
-                var resultsByAccount = {};
-                for (var i=0; i<results.length; i++) {
-                    var account = results[i].account;
-                    resultsByAccount[account] = results[i].sumForeignContrib;
-                }
                 dfd.resolve(resultsByAccount);
             }
         });
-    
+            
         return dfd;
     },
     
