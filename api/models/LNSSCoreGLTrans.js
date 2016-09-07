@@ -485,7 +485,7 @@ module.exports = {
                     nss_core_gltran \
                 WHERE \
                     gltran_perpost > ? \
-                    AND gltran_acctnum >= 4100 \
+                    AND gltran_acctnum >= 4000 \
                     AND gltran_acctnum <= 4410 \
                     AND gltran_subacctnum LIKE ? \
                 GROUP BY \
