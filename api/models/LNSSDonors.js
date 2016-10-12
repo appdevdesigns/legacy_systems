@@ -122,16 +122,18 @@ module.exports = {
             }
             
             // Donor type
-            var types = {
-                0: 'Normal',
-                99: 'Anonymous local',
-                98: 'Anonymous other'
-            };
-            obj.donors_type = types[obj.donors_type] || obj.donors_type;
+            obj.donors_type = LNSSDonors.DonorTypes[obj.donors_type] || obj.donors_type;
             
             return obj;
         }
 
+    },
+    
+    
+    DonorTypes: {
+        0: 'Normal',
+        99: 'Anonymous local',
+        98: 'Anonymous other'
     }
     
     
