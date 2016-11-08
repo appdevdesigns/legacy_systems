@@ -358,7 +358,7 @@ module.exports = {
                     if (err) next(err);
                     else {
                         if (results && results[0]) {
-                            balancePeriod = results[0].balancePeriod;
+                            balancePeriod = String(results[0].balancePeriod).replace('-', '');
                             balancePeriodID = results[0].periodID;
                         } else {
                             balancePeriod = '000000';
