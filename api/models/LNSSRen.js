@@ -319,7 +319,7 @@ module.exports = {
             'transfers': []
         };
         
-        var period, periodID, balancePeriod, balancePeriodID;
+        var period, periodID, balancePeriod, balancePeriodID; // yyyymm
         var nssrenID = options.nssrenID;
         
         
@@ -342,7 +342,7 @@ module.exports = {
                         p.requestcutoff_id AS 'periodID', \
                         p.requestcutoff_period AS 'month', \
                         y.fiscalyear_glprefix AS 'year', \
-                        nr.nssren_balancePeriod, \
+                        nr.nssren_balancePeriod AS 'balancePeriod', \
                         p.requestcutoff_date AS 'date' \
                     FROM \
                         nss_core_ren AS nr \
@@ -358,7 +358,7 @@ module.exports = {
                     if (err) next(err);
                     else {
                         if (results && results[0]) {
-                            balancePeriod = '' + results[0].year + results[0].month;
+                            balancePeriod = results[0].balancePeriod;
                             balancePeriodID = results[0].periodID;
                         } else {
                             balancePeriod = '000000';
