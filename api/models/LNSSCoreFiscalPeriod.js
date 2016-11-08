@@ -75,6 +75,19 @@ module.exports = {
             date: 'yyyy-mm-dd'      // real date (roughly)
         };
         
+        /*
+            Fiscal period entries are to be sorted by GLPrefix (YYYY) 
+            and period number (MM). Sorting by requestcutoff_id or by the
+            period's date is similar in practice but not guaranteed to always
+            be accurate.
+            
+            requestcutoff_id is autoincremented and some entries could 
+            conceivably get created out of order under edge conditions.
+            
+            requestcutoff_date is not authoritative and can be arbitrarily
+            changed.
+        */
+        
         // Find the earliest open period
         LNSSCoreFiscalPeriod.query(" \
             SELECT \
@@ -93,7 +106,8 @@ module.exports = {
             WHERE \
                 fp.requestcutoff_isClosed = 0 \
             ORDER BY \
-                requestcutoff_id ASC \
+                fy.fiscalyear_glprefix ASC, \
+                fp.requestcutoff_period ASC \
             LIMIT 1 \
         ", function(err, results) {
             if (err) {

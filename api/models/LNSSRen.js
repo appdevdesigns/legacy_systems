@@ -322,6 +322,7 @@ module.exports = {
         var period, periodID, balancePeriod, balancePeriodID;
         var nssrenID = options.nssrenID;
         
+        
         async.auto({
             // Current fiscal period
             'getPeriod': function(next) {
@@ -341,7 +342,8 @@ module.exports = {
                         p.requestcutoff_id AS 'periodID', \
                         p.requestcutoff_period AS 'month', \
                         y.fiscalyear_glprefix AS 'year', \
-                        nr.nssren_balancePeriod \
+                        nr.nssren_balancePeriod, \
+                        p.requestcutoff_date AS 'date' \
                     FROM \
                         nss_core_ren AS nr \
                         JOIN nss_core_fiscalperiod AS p \
@@ -383,6 +385,8 @@ module.exports = {
                     SELECT \
                         tran.*, \
                         LEFT(p.requestcutoff_date, 7) AS 'month', \
+                        CONCAT(y.fiscalyear_glprefix, '-', LPAD(p.requestcutoff_period, 2, '0')) AS 'period', \
+                        CONCAT(y.fiscalyear_glprefix, LPAD(p.requestcutoff_period, 2, '0')) AS 'periodYYYYMM', \
                         terr.territory_desc \
                     FROM \
                         nss_payroll_transactions AS tran \
@@ -391,11 +395,13 @@ module.exports = {
                         \
                         JOIN nss_core_fiscalperiod AS p \
                             ON p.requestcutoff_id = tran.requestcutoff_id \
+                        JOIN nss_core_fiscalyear AS y \
+                            ON p.requestcutoff_year = y.fiscalyear_id \
                     WHERE \
                         nssren_id = ? \
-                        AND tran.requestcutoff_id > ? \
-                        AND tran.requestcutoff_id < ? \
-                ", [nssrenID, balancePeriodID, periodID], function(err, results) {
+                    HAVING \
+                        `periodYYYYMM` > ? AND `periodYYYYMM` < ? \
+                ", [nssrenID, balancePeriod, period], function(err, results) {
                     if (err) next(err);
                     else {
                         var payrollSum = 0;
