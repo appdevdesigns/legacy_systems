@@ -305,6 +305,7 @@ module.exports = {
         
         var queries = [
             // Query 1: debits - credits
+            // Account codes from 6000 to 8200, except for 8100
             " \
                 SELECT \
                     gltran_subacctnum AS account, \
@@ -322,6 +323,7 @@ module.exports = {
             ",
             
             // Query 2: debits only
+            // Account code 8100
             " \
                 SELECT \
                     gltran_subacctnum AS account, \
@@ -365,6 +367,7 @@ module.exports = {
     
     
     /**
+     * THIS IS NOT USED
      * Total amount of funds entering the account per month, over the past
      * twelve months, of each staff.
      *
@@ -477,6 +480,7 @@ module.exports = {
         
         var queries = [
             // Query 1: credits - debits
+            // Account codes from 4000 to 4410
             " \
                 SELECT \
                     gltran_subacctnum AS account, \
@@ -493,6 +497,7 @@ module.exports = {
             ",
             
             // Query 2: credits only
+            // Account code 8100
             " \
                 SELECT \
                     gltran_subacctnum AS account, \
@@ -617,6 +622,7 @@ module.exports = {
         
         var queries = [
             // Query 1: credits - debits
+            // Account codes from 5000 to 5780
             " \
                 SELECT \
                     gltran_subacctnum AS account, \
