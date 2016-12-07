@@ -272,7 +272,7 @@ module.exports = {
     balanceForPeriods: function(periods, account) {
         var dfd = AD.sal.Deferred();
         
-        var accountFilter = account || '10____';
+        var accountFilter = account || '_0____';
         
         //// Step 1: Fetch all balances from the years containing the requested
         ////         fiscal periods.
@@ -291,9 +291,6 @@ module.exports = {
         LNSSCoreAccountHistory.find()
         .where({ accounthistory_fiscalyear: years })
         .where({ subaccounts_accountNum: {'like': accountFilter} })
-        .fail(function(err) {
-            dfd.reject(err);
-        })
         .then(function(list) {
             
             var results = {
@@ -327,6 +324,11 @@ module.exports = {
             }
             
             dfd.resolve(results);
+            return null;
+        })
+        .catch(function(err) {
+            dfd.reject(err);
+            return null;
         });
         
         return dfd;

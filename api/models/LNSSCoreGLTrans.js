@@ -122,7 +122,7 @@ module.exports = {
     byAccount: function(periods, account) {
         var dfd = AD.sal.Deferred();
         
-        var accountFilter = account || '10____';
+        var accountFilter = account || '_0____';
         
         var transactions = {
         /*
@@ -245,7 +245,7 @@ module.exports = {
      *      The gltran_perpost period to start counting from
      *      Format: YYYYMM
      * @param string account
-     *      The staff account number 10____
+     *      The staff account number _0____
      * @return Deferred
      */
     monthlyIncomeExpenditure: function(startingPeriod, account) {
@@ -294,12 +294,12 @@ module.exports = {
      *      Format: YYYYMM
      * @param string account
      *      Optional. Only find staff accounts like this.
-     *      Default is '10____'.
+     *      Default is '_0____'.
      * @return Deferred
      */
     sumExpenditure: function(startingPeriod, account) {
         var dfd = AD.sal.Deferred();
-        var account = account || '10____';
+        var account = account || '_0____';
         
         var resultsByAccount = {};
         
@@ -381,12 +381,12 @@ module.exports = {
      *      Format: YYYYMM
      * @param string account
      *      Optional. Only find staff accounts like this.
-     *      Default is '10____'.
+     *      Default is '_0____'.
      * @return Deferred
      */
     sumIncome: function(startingPeriod, account) {
         var dfd = AD.sal.Deferred();
-        var account = account || '10____';
+        var account = account || '_0____';
         
         var resultsByAccount = {};
         
@@ -466,12 +466,12 @@ module.exports = {
      *      Format: YYYYMM
      * @param string account
      *      Optional. Only find staff accounts like this.
-     *      Default is '10____'.
+     *      Default is '_0____'.
      * @return Deferred
      */
     sumLocalContrib: function(startingPeriod, account) {
         var dfd = AD.sal.Deferred();
-        var account = account || '10____';
+        var account = account || '_0____';
         
         var resultsByAccount = {};
         
@@ -549,12 +549,12 @@ module.exports = {
      *      Format: YYYYMM
      * @param string account
      *      Optional. Only find staff accounts like this.
-     *      Default is '10____'.
+     *      Default is '_0____'.
      * @return Deferred
      */
     sumSalary: function(startingPeriod, account) {
         var dfd = AD.sal.Deferred();
-        var account = account || '10____';
+        var account = account || '_0____';
         
         // gltran_acctnum meanings:
         //  7000 - salary, additional salary, short pay, reduce ytd salary paid
@@ -606,12 +606,12 @@ module.exports = {
      *      Format: YYYYMM
      * @param string account
      *      Optional. Only find staff accounts like this.
-     *      Default is '10____'.
+     *      Default is '_0____'.
      * @return Deferred
      */
     sumForeignContrib: function(startingPeriod, account) {
         var dfd = AD.sal.Deferred();
-        var account = account || '10____';
+        var account = account || '_0____';
         
         var resultsByAccount = {};
         
@@ -676,12 +676,12 @@ module.exports = {
      *      Format: YYYYMM
      * @param string account
      *      Optional. Only find staff accounts like this.
-     *      Default is '10____'.
+     *      Default is '_0____'.
      * @return Deferred
      */
     shortPayPeriods: function(startingPeriod, account) {
         var dfd = AD.sal.Deferred();
-        var account = account || '10____';
+        var account = account || '_0____';
         
         LNSSCoreGLTrans.query(" \
             SELECT \

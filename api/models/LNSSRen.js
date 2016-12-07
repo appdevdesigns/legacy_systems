@@ -229,7 +229,7 @@ module.exports = {
      * @param object options
      *      { 
      *          viewerGUID: <string>,   // guid from CAS
-     *          account: <string>,      // 10____ from HRIS
+     *          account: <string>,      // _0____ from HRIS
      *      }
      * @return Deferred
      */
@@ -245,7 +245,7 @@ module.exports = {
         }
         
         var viewerGUID = options.viewerGUID || '%';
-        var account = options.account || '10____';
+        var account = options.account || '_0____';
         
         LNSSRen.query(" \
             SELECT \
@@ -726,7 +726,7 @@ module.exports = {
      *      {
      *        "name": <string>,         // Surname, Given name (Preferred)
      *        "chineseName": <string>,
-     *        "accountNum": <string>,   // 10XXXX
+     *        "accountNum": <string>,   // X0XXXX
      *        "baseSalary": <integer>,  // base monthly salary
      *        "accountBal": <integer>,  // ytdBalance
      *        "email": <string>,        // secure email
