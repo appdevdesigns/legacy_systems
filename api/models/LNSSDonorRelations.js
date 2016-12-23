@@ -11,7 +11,7 @@ module.exports = {
     autoCreatedAt:false,
     autoUpdatedAt:false,
     autoPK:false,
-    // migrate:'safe',  // don't update the tables!
+    migrate:'safe',  // don't update the tables!
 
 
 

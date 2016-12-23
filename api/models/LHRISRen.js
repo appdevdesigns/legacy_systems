@@ -13,7 +13,7 @@ module.exports = {
     autoCreatedAt:false,
     autoUpdatedAt:false,
     autoPK:false,
-    // migrate:'safe',
+    migrate:'safe',
 
 
     connection: ['legacy_hris'],
