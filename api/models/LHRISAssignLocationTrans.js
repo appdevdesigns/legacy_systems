@@ -31,7 +31,7 @@ module.exports = {
         }, 
 
         location_id : { 
-            model:'LHRISAssignLocation'
+            model: 'LHRISAssignLocation'
         }, 
 
         language_code : {

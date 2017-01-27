@@ -7,7 +7,6 @@
 
 module.exports = {
 
-    // tableName:"lhris_xref_team_location",
     tableName:"hris_xref_team_location",
     autoCreatedAt:false,
     autoUpdatedAt:false,
@@ -15,9 +14,7 @@ module.exports = {
     migrate:'safe',  // don't update the tables!
 
 
-    connection:"legacy_hris",
-// connection:"hris",
-
+    connection: "legacy_hris",
 
 
     attributes: {
@@ -35,13 +32,12 @@ module.exports = {
         }, 
 
         team_id : {
-            type : "integer",
-            size : 11
+            model: 'LHRISAssignTeam'
         }, 
 
         location_id : {
-            model:'LHRISAssignLocation'
-        }, 
+            model: 'LHRISAssignLocation'
+        }
 
 
     }

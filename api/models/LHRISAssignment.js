@@ -16,7 +16,6 @@ module.exports = {
 
 
   connection:"legacy_hris",
-// connection:"hris",
 
 
 
@@ -39,15 +38,11 @@ module.exports = {
         }, 
 
         team_id : {
-            type : "integer",
-            size : 11,
-            defaultsTo : "1"
+            model: 'LHRISAssignTeam'
         }, 
 
         position_id : {
-            type : "integer",
-            size : 11,
-            defaultsTo : "1"
+            model: 'LHRISAssignPosition'
         }, 
 
         assignment_startdate : {

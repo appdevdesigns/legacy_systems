@@ -9,7 +9,6 @@ var AD = require('ad-utils');
 
 module.exports = {
 
-    // tableName:"lhris_assign_location_data",
     tableName:"hris_assign_location_data",
     autoCreatedAt:false,
     autoUpdatedAt:false,
@@ -19,7 +18,6 @@ module.exports = {
 
 
     connection:"legacy_hris",
-// connection:"hris",
 
 
 
@@ -38,28 +36,26 @@ module.exports = {
         }, 
 
         locationtype_id : {
-            type : "integer",
-            size : 11
+            model: 'LHRISAssignLocationType'
         }, 
 
         parent_id : {
-            model:'LHRISAssignLocation'
+            model: 'LHRISAssignLocation'
         }, 
 
-        translations:{
-            collection:'LHRISAssignLocationTrans',
-            via:'location_id'
+        translations: {
+            collection: 'LHRISAssignLocationTrans',
+            via: 'location_id'
         },
 
-        locations:{
-            collection:'LHRISAssignLocation',
-            via:'parent_id'
+        locations: {
+            collection: 'LHRISAssignLocation',
+            via: 'parent_id'
         },
-
 
         team_id: {
-            collection:'LHRISXRefTeamLocation',
-            via:'location_id'
+            collection: 'LHRISXRefTeamLocation',
+            via: 'location_id'
         }
 
 

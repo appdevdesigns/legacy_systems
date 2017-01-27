@@ -9,7 +9,6 @@ var AD = require('ad-utils');
 
 module.exports = {
 
-    // tableName:"lhris_account",
     tableName:"hris_worker",
     autoCreatedAt:false,
     autoUpdatedAt:false,
@@ -18,7 +17,6 @@ module.exports = {
 
 
     connection:"legacy_hris",
-// connection:"hris",
 
 
     attributes: {
@@ -38,9 +36,83 @@ module.exports = {
         ren_id : {
             model: 'LHRISRen'
         }, 
+        
+        worker_enrolledasstudent: {
+            type: 'integer',
+            size: 1,
+            defaultsTo: 0
+        },
+        
+        sendingregion_id: {
+            model: 'LHRISSendingRegion'
+        },
+        
+        worker_acceptancedate: {
+            type: 'date'
+        },
+        
+        worker_datejoinedstaff: {
+            type: 'date'
+        },
+        
+        worker_terminationdate: {
+            type: 'date'
+        },
+        
+        worker_motherattitude: {
+            model: 'LHRISAttitude'
+        },
+        
+        worker_fatherattitude: {
+            model: 'LHRISAttitude'
+        },
+        
+        worker_isenrolledfortax: {
+            type: 'integer',
+            size: 1,
+            defaultsTo: 0
+        },
+        
+        worker_hukoulocation: {
+            type: 'string',
+            size: 45
+        },
+        
+        worker_governmendid: {
+            type: 'string',
+            size: 45
+        },
+        
+        worker_vocation: {
+            type: 'string',
+            size: 45
+        },
+        
+        statustype_id: {
+            model: 'LHRISWorkerStatusType'
+        },
+        
+        paysys_id: {
+            model: 'LHRISWorkerPaysys'
+        },
+        
+        fundingsource_id: {
+            model: 'LHRISFundingSource'
+        },
 
         account_id : {
             model: 'LHRISAccount'
+        },
+        
+        worker_tenuremodifier: {
+            type: 'integer',
+            size: 5,
+            defaultsTo: 0
+        },
+        
+        statusHistory: {
+            collection: 'LHRISWorkerStatusHistory',
+            via: 'worker_id'
         }
 
 

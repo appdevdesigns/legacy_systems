@@ -7,7 +7,6 @@
 
 module.exports = {
 
-    // tableName:"lhris_assign_locationtype_data",
     tableName:"hris_assign_locationtype_data",
     autoCreatedAt:false,
     autoUpdatedAt:false,
@@ -16,7 +15,6 @@ module.exports = {
 
 
     connection:"legacy_hris",
-// connection:"hris",
 
 
 
@@ -36,8 +34,8 @@ module.exports = {
         }, 
 
         translations:{
-            collection:'LHRISAssignLocationTypeTrans',
-            via:'locationtype_id'
+            collection: 'LHRISAssignLocationTypeTrans',
+            via: 'locationtype_id'
         }
 
 

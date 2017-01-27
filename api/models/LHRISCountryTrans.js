@@ -7,7 +7,6 @@
 
 module.exports = {
 
-    // tableName:"lhris_country_trans",
     tableName:"hris_country_trans",
     autoCreatedAt:false,
     autoUpdatedAt:false,
@@ -16,7 +15,6 @@ module.exports = {
 
 
     connection:"legacy_hris",
-// connection:"hris",
 
 
     attributes: {

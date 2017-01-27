@@ -7,7 +7,6 @@
 
 module.exports = {
 
-    // tableName:"lhris_phonetype_data",
     tableName:"hris_phonetype_data",
     autoCreatedAt:false,
     autoUpdatedAt:false,
@@ -17,8 +16,6 @@ module.exports = {
 
 
     connection:"legacy_hris",
-// connection:"hris",
-
 
 
     attributes: {

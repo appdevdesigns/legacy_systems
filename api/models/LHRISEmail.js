@@ -7,7 +7,6 @@
 
 module.exports = {
 
-    // tableName:"lhris_email",
     tableName:"hris_email",
     autoCreatedAt:false,
     autoUpdatedAt:false,
@@ -17,7 +16,6 @@ module.exports = {
 
 
     connection:"legacy_hris",
-// connection:"hris",
 
 
 

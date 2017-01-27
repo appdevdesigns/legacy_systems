@@ -8,55 +8,64 @@
 
 module.exports = {
 
-    // tableName:"lhris_ren_data",
     tableName:"hris_ren_data",
     autoCreatedAt:false,
     autoUpdatedAt:false,
     autoPK:false,
     migrate:'safe',
 
-
     connection: ['legacy_hris'],
-
 
 
     attributes: {
 
-        /* e.g.
-        nickname: 'string'
-        */
-
         ren_id  : { 
             type:'INTEGER',
+            size: 11,
             primaryKey:true,
             autoIncrement: true
         },
 
 
-        ren_guid    : 'STRING',
+        ren_guid: {
+            type: 'STRING',
+            size: 45
+        },
 
 
-        rentype_id  : 'INTEGER',
-
+        rentype_id: {
+            model: 'LHRISRenType'
+        },
 
         family_id   : {
             model:'LHRISFamily'
         },
 
 
-        ren_surname : 'STRING',
+        ren_surname: {
+            type: 'STRING',
+            size: 45
+        },
 
+        ren_givenname: {
+            type: 'STRING',
+            size: 45
+        },
 
-        ren_givenname   : 'STRING',
+        ren_namecharacters: {
+            type: 'STRING',
+            size: 45
+        },
 
+        ren_namepinyin: {
+            type: 'STRING',
+            size: 45
+        },
 
-        ren_namecharacters  : 'STRING',
-
-
-        ren_namepinyin  : 'STRING',
-
-
-        ren_preferredname   : 'STRING',
+        ren_preferredname: {
+            type: 'STRING',
+            size: 45
+        },
 
 
         ren_birthdate   : {
@@ -73,44 +82,108 @@ module.exports = {
         },
 
 
-        gender_id   : 'INTEGER',
+        gender_id: {
+            model: 'LHRISGender'
+        },
+
+        maritalstatus_id: {
+            model: 'LHRISMaritalStatus'
+        },
 
 
-        maritalstatus_id    : 'INTEGER',
+        ethnicity_id: {
+            model: 'LHRISEthnicity'
+        },
 
 
-        ethnicity_id    : 'INTEGER',
+        ren_primarycitizenship: {
+            model: 'LHRISCountry'
+        },
 
+        statustype_id: {
+            model: 'LHRISRenStatusType'
+        },
 
-        ren_primarycitizenship  : 'INTEGER',
+        ren_isfamilypoc: {
+            type: 'INTEGER',
+            size: 1
+        },
 
+        ren_preferredlang: {
+            model: 'LHRISLanguage'
+        },
+        
+        ren_pocid: {
+            model: 'LHRISRen'
+        },
 
-        statustype_id   : 'INTEGER',
-
-
-        ren_isfamilypoc : 'INTEGER',
-
-
-        ren_preferredlang   : 'INTEGER',
-
-
-        ren_picture : '?BLOB?',
+        //ren_picture : '?BLOB?',
 
         emails: {
             collection:'LHRISEmail',
             via:'ren_id'
         },
 
-        phones:{
+        phones: {
             collection: 'LHRISPhone',
             via: 'ren_id'
         },
-
+        
+        altContacts: {
+            collection: 'LHRISAltContact',
+            via: 'ren_id'
+        },
+        
         assignments: {
             collection: 'LHRISAssignment',
             via: 'ren_id'
+        },
+        
+        attachments: {
+            collection: 'LHRISXRefAttachmentRen',
+            via: 'ren_id'
+        },
+        
+        dependents: {
+            collection: 'LHRISDependent',
+            via: 'ren_id'
+        },
+        
+        education: {
+            collection: 'LHRISEducation',
+            via: 'ren_id'
+        },
+        
+        interests: {
+            collection: 'LHRISInterest',
+            via: 'ren_id'
+        },
+        
+        medical: {
+            collection: 'LHRISMedical',
+            via: 'ren_id'
+        },
+        
+        passports: {
+            collection: 'LHRISPassport',
+            via: 'ren_id'
+        },
+        
+        talents: {
+            collection: 'LHRISTalent',
+            via: 'ren_id'
+        },
+        
+        training: {
+            collection: 'LHRISTraining',
+            via: 'ren_id'
+        },
+        
+        languages: {
+            collection: 'LHRISXRefRenLanguageProficiency',
+            via: 'ren_id'
         }
-
+        
     }
 
 };

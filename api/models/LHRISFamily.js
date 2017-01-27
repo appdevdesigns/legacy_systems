@@ -16,7 +16,6 @@ module.exports = {
 
 
     connection:"legacy_hris",
-// connection:"hris",
 
 
 
@@ -52,14 +51,14 @@ module.exports = {
             defaultsTo : "0"
         },
 
-        members:{
+        members: {
             collection: 'LHRISRen',
-            via:'family_id'
+            via: 'family_id'
         },
 
-        accounts:{
+        accounts: {
             collection: 'LHRISAccount',
-            via:'family_id'
+            via: 'family_id'
         }
 
     }

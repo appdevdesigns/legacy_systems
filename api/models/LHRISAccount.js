@@ -7,7 +7,6 @@
 
 module.exports = {
 
-    // tableName:"lhris_account",
     tableName:"hris_account",
     autoCreatedAt:false,
     autoUpdatedAt:false,
@@ -16,7 +15,6 @@ module.exports = {
 
 
     connection:"legacy_hris",
-// connection:"hris",
 
 
     attributes: {
@@ -43,8 +41,7 @@ module.exports = {
         }, 
 
         country_id : {
-            type : "integer",
-            size : 11
+            model: 'LHRISCountry'
         }, 
 
         account_isprimary : {
