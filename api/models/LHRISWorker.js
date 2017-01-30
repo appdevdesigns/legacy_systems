@@ -78,7 +78,7 @@ module.exports = {
             size: 45
         },
         
-        worker_governmendid: {
+        worker_governmentid: {
             type: 'string',
             size: 45
         },
