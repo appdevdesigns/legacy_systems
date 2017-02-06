@@ -8,77 +8,74 @@
 
 module.exports = {
 
-    tableName:"hris_ren_data",
-    autoCreatedAt:false,
-    autoUpdatedAt:false,
-    autoPK:false,
-    migrate:'safe',
+    tableName: "hris_ren_data",
+    autoCreatedAt: false,
+    autoUpdatedAt: false,
+    autoPK: false,
+    migrate: 'safe',
 
     connection: ['legacy_hris'],
 
 
     attributes: {
 
-        ren_id  : { 
-            type:'INTEGER',
+        id: { 
+            columnName: 'ren_id',
+            type: 'integer',
             size: 11,
-            primaryKey:true,
+            primaryKey: true,
             autoIncrement: true
         },
 
-
         ren_guid: {
-            type: 'STRING',
+            type: 'string',
             size: 45
         },
-
 
         rentype_id: {
             model: 'LHRISRenType'
         },
 
-        family_id   : {
+        family_id: {
             model:'LHRISFamily'
         },
 
-
         ren_surname: {
-            type: 'STRING',
+            type: 'string',
             size: 45
         },
 
         ren_givenname: {
-            type: 'STRING',
+            type: 'string',
             size: 45
         },
 
         ren_namecharacters: {
-            type: 'STRING',
+            type: 'string',
             size: 45
         },
 
         ren_namepinyin: {
-            type: 'STRING',
+            type: 'string',
             size: 45
         },
 
         ren_preferredname: {
-            type: 'STRING',
+            type: 'string',
             size: 45
         },
 
-
         ren_birthdate   : {
-            type : "date",
-            defaultsTo : "0000-00-00",
-            required:false
+            type: "date",
+            defaultsTo: "0000-00-00",
+            required: false
         },
 
 
         ren_deathdate   : {
-            type : "date",
-            defaultsTo : "0000-00-00",
-            required:false
+            type: "date",
+            defaultsTo: "0000-00-00",
+            required: false
         },
 
 
@@ -105,7 +102,7 @@ module.exports = {
         },
 
         ren_isfamilypoc: {
-            type: 'INTEGER',
+            type: 'integer',
             size: 1
         },
 
@@ -113,12 +110,19 @@ module.exports = {
             model: 'LHRISLanguage'
         },
         
+        translations: {
+            collection: 'LHRISRenTrans',
+            via: 'ren_id'
+        },
+        
+        /*
         ren_pocid: {
             model: 'LHRISRen'
         },
+        */
 
         //ren_picture : '?BLOB?',
-
+        
         emails: {
             collection:'LHRISEmail',
             via:'ren_id'

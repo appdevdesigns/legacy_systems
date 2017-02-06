@@ -22,7 +22,8 @@ module.exports = {
 
   attributes: {
 
-    "sh_id" : {
+    'id' : {
+        columnName: "sh_id",
         type : "integer",
         size : 11,
         primaryKey : true,

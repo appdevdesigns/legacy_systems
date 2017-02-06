@@ -22,7 +22,8 @@ module.exports = {
 
   attributes: {
 
-    "educationmajor_id" : {
+    'id' : {
+        columnName: "educationmajor_id",
         type : "integer",
         size : 11,
         primaryKey : true,

@@ -22,7 +22,8 @@ module.exports = {
 
   attributes: {
 
-    "sendingregion_id" : {
+    'id' : {
+        columnName: "sendingregion_id",
         type : "integer",
         size : 11,
         primaryKey : true,

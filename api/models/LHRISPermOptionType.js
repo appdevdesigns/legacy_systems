@@ -22,7 +22,8 @@ module.exports = {
 
   attributes: {
 
-    "optiontype_id" : {
+    'id' : {
+        columnName: "optiontype_id",
         type : "integer",
         size : 11,
         primaryKey : true,

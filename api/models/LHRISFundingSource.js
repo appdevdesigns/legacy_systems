@@ -22,7 +22,8 @@ module.exports = {
 
   attributes: {
 
-    "fundingsource_id" : {
+    'id' : {
+        columnName: "fundingsource_id",
         type : "integer",
         size : 11,
         primaryKey : true,

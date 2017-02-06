@@ -22,7 +22,8 @@ module.exports = {
 
   attributes: {
 
-    "language_id" : {
+    'id' : {
+        columnName: "language_id",
         type : "integer",
         size : 11,
         primaryKey : true,

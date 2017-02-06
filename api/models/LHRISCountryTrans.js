@@ -19,7 +19,8 @@ module.exports = {
 
     attributes: {
 
-        Trans_id : {
+        'id' : {
+            columnName: 'Trans_id',
             type : "integer",
             size : 11,
             primaryKey : true,

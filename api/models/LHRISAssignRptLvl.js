@@ -18,7 +18,8 @@ module.exports = {
 
     attributes: {
 
-        rptlvl_id : {
+        'id' : {
+            columnName: 'rptlvl_id',
             type : "integer",
             size : 11,
             primaryKey : true,

@@ -22,7 +22,8 @@ module.exports = {
 
   attributes: {
 
-    "address_id" : {
+    'id' : {
+        columnName: "address_id",
         type : "integer",
         size : 11,
         primaryKey : true,

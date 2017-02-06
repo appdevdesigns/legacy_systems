@@ -22,7 +22,8 @@ module.exports = {
 
   attributes: {
 
-    "paysys_id" : {
+    'id' : {
+        columnName: "paysys_id",
         type : "integer",
         size : 11,
         primaryKey : true,

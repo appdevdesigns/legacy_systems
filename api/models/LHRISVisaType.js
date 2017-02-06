@@ -22,7 +22,8 @@ module.exports = {
 
   attributes: {
 
-    "visatype_id" : {
+    'id' : {
+        columnName: "visatype_id",
         type : "integer",
         size : 11,
         primaryKey : true,

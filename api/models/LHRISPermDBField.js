@@ -22,7 +22,8 @@ module.exports = {
 
   attributes: {
 
-    "dbfield_id" : {
+    'id' : {
+        columnName: "dbfield_id",
         type : "integer",
         size : 11,
         primaryKey : true,

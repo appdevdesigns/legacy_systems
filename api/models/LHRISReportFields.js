@@ -22,7 +22,8 @@ module.exports = {
 
   attributes: {
 
-    "reportfield_id" : {
+    'id' : {
+        columnName: "reportfield_id",
         type : "integer",
         size : 11,
         primaryKey : true,

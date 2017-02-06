@@ -22,7 +22,8 @@ module.exports = {
 
   attributes: {
 
-    "bloodtype_id" : {
+    'id' : {
+        columnName: "bloodtype_id",
         type : "integer",
         size : 11,
         primaryKey : true,

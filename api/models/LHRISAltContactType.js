@@ -22,7 +22,8 @@ module.exports = {
 
   attributes: {
 
-    "altcontacttype_id" : {
+    'id' : {
+        columnName: "altcontacttype_id",
         type : "integer",
         size : 11,
         primaryKey : true,

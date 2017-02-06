@@ -22,7 +22,8 @@ module.exports = {
 
   attributes: {
 
-    "attachment_id" : {
+    'id' : {
+        columnName: "attachment_id",
         type : "integer",
         size : 11,
         primaryKey : true,

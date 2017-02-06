@@ -19,7 +19,8 @@ module.exports = {
 
     attributes: {
 
-        phone_id: { 
+        id: { 
+            columnName: 'phone_id',
             type: 'INTEGER',
             primaryKey: true,
             autoIncrement: true

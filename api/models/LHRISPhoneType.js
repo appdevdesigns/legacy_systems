@@ -20,7 +20,8 @@ module.exports = {
 
     attributes: {
 
-        phonetype_id : {
+        'id' : {
+            columnName: 'phonetype_id',
             type : "integer",
             size : 11,
             primaryKey : true,
