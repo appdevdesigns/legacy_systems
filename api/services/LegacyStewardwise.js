@@ -1059,20 +1059,24 @@ Log('allAccounts:', allAccounts);
         regionsFromTerritories: function(filter) {
             var dfd = AD.sal.Deferred();
 
-
             LNSSCoreTerritory.find(filter)
-            .fail(function(err){
-                AD.log.error('... error finding territories with filter: ', filter, '\n err:', err);
-                dfd.reject(err);
-            })
-            .done(function(list){
-
-                list.forEach(function(entry){
-                    entry.region = Helper.regionFromTerritory(entry);
-                })
+            .then(function(list){
+                
+                if (list && list[0]) {
+                    list.forEach(function(entry){
+                        entry.region = Helper.regionFromTerritory(entry);
+                    })
+                } else {
+                    list = [];
+                }
 
                 dfd.resolve(list);
+                return null;
             })
+            .catch(function(err){
+                AD.log.error('... error finding territories with filter: ', filter, '\n err:', err);
+                dfd.reject(err);
+            });
 
             return dfd;
         }
