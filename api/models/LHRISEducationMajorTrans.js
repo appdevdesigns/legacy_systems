@@ -1,5 +1,5 @@
 /**
- * LHRISEdicationMajorTrans.js
+ * LHRISEducationMajorTrans.js
  *
  * @docs        :: http://sailsjs.org/documentation/concepts/models-and-orm/models
  */

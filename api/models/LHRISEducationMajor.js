@@ -37,7 +37,7 @@ module.exports = {
     }, 
     
     translations: {
-        colleciton: 'LHRISEducationMajorTrans',
+        collection: 'LHRISEducationMajorTrans',
         via: 'educationmajor_id'
     }
 
