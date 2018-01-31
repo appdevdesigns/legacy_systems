@@ -284,6 +284,97 @@ module.exports = {
         });
         
         return dfd;
+    },
+    
+    
+    /**
+     * Find active workers that have a current team assignment.
+     * Includes worker name & gender, team name, location, and MCC.
+     *
+     * @param {String} [langCode]
+     *      Language code of labels for gender, team name, etc.
+     *      Default is 'en'.
+     * @return {Promise}
+     */
+    activeAssignedWorkers: function(langCode='en') {
+        return new Promise((resolve, reject) => {
+            LHRISWorker.query(`
+                
+                SELECT
+                    ren.ren_id, ren.ren_guid,
+                    ren.ren_surname, ren.ren_givenname, ren.ren_preferredname,
+                    gen.gender_id, genT.gender_label,
+                    team.team_id, teamT.team_label,
+                    pos.position_id, posT.position_label,
+                    team.parent_id, location.location_id,
+                    mccT.mcc_label AS mcc
+                FROM
+                    hris_assign_team_data team
+                    
+                    -- Team
+                    JOIN hris_assign_team_trans teamT
+                        ON team.team_id = teamT.team_id
+                        AND teamT.language_code = ?
+                    
+                    -- Team location
+                    JOIN hris_xref_team_location xtl
+                        ON team.team_id = xtl.team_id
+                    JOIN hris_assign_location_data location
+                        ON xtl.location_id = location.location_id
+                        
+                    -- Team MCC label
+                    JOIN hris_assign_mcc_trans mccT
+                        ON team.mcc_id = mccT.mcc_id
+                        AND mccT.language_code = ?
+                    
+                    -- Assignment
+                    JOIN hris_assignment assign
+                        ON assign.team_id = team.team_id
+                        AND assign.assignment_isprimary
+                        AND (
+                            assign.assignment_enddate = '1000-01-01'
+                            OR assign.assignment_enddate > NOW()
+                        )
+                    
+                    -- Assignment position
+                    JOIN hris_assign_position_data pos
+                        ON assign.position_id = pos.position_id
+                    JOIN hris_assign_position_trans posT
+                        ON pos.position_id = posT.position_id
+                        AND posT.language_code = ?
+                    
+                    -- Ren
+                    JOIN hris_ren_data ren
+                        ON assign.ren_id = ren.ren_id
+                        AND ren.statustype_id IN (3, 4, 5)
+                    JOIN hris_gender_data gen
+                        ON ren.gender_id = gen.gender_id
+                    JOIN hris_gender_trans genT
+                        ON gen.gender_id = genT.gender_id
+                        AND genT.language_code = ?
+                    
+                    JOIN hris_worker w
+                        ON ren.ren_id = w.ren_id
+                        AND w.worker_dateleftchinamin = '1000-01-01'
+                        AND w.worker_terminationdate = '1000-01-01'
+                    
+                    -- Ensure only one result per person
+                    GROUP BY
+                        ren.ren_id
+            
+            `, 
+            [langCode, langCode, langCode, langCode, langCode], 
+            (err, list) => {
+                if (err) reject(err);
+                else if (!list || !list[0]) {
+                    reject(new Error('No HRIS data found'));
+                }
+                else {
+                    resolve(list);
+                }
+            });
+        });
     }
+    
 };
 
