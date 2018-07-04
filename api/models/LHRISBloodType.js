@@ -35,6 +35,11 @@ module.exports = {
         size : 1,
         defaultsTo : "0"
     }, 
+
+    medical_records: {
+        collection: "LHRISMedical",
+        via: "bloodtype_id"
+    },
     
     translations: {
         collection: 'LHRISBloodTypeTrans',

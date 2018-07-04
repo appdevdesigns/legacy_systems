@@ -23,30 +23,35 @@ module.exports = {
 
         'id' : {
             columnName: 'country_id',
-            type : "integer",
+            type : 'integer',
             size : 11,
             primaryKey : true,
             autoIncrement : true
         }, 
 
-        country_code : {
-            type : "string",
+        'country_code' : {
+            type : 'string',
             size : 2
         }, 
 
-        country_callingcode : {
-            type : "string",
+        'country_callingcode' : {
+            type : 'string',
             size : 10,
-            defaultsTo : "-"
+            defaultsTo : '-'
         }, 
 
-        country_weight : {
-            type : "integer",
+        'country_weight' : {
+            type : 'integer',
             size : 11,
-            defaultsTo : "0"
+            defaultsTo : '0'
         },
 
-        translations: {
+        'passport_record': {
+             collection: "LHRISPassport",
+             via: "country_id"
+        },
+
+        'translations': {
             collection:'LHRISCountryTrans',
             via:'country_id'
         }
