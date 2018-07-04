@@ -34,7 +34,7 @@ module.exports = {
             defaultsTo : "0"
         }, 
 
-        phone_record: {
+        phonerecord_id: {
             collection: 'LHRISPhone',
             via: 'phonetype_id'
         },

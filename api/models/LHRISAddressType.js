@@ -35,6 +35,11 @@ module.exports = {
         size : 1,
         defaultsTo : "0"
     }, 
+
+    "addressstype": {
+        collection: "LHRISAddress",
+        via: "addresstype_id"
+    }, 
     
     translations: {
         collection: 'LHRISAddressTypeTrans',

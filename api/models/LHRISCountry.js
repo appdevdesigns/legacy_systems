@@ -53,7 +53,12 @@ module.exports = {
 
         'phone_record': {
              collection: "LHRISPhone",
-             via: "phone_countrycode"
+             via: "country_id"
+        },
+
+        "address_record": {
+           collection: "LHRISAddress",
+            via: "country_id"
         },
 
         'translations': {

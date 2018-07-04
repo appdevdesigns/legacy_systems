@@ -36,6 +36,11 @@ module.exports = {
         defaultsTo : "0"
     }, 
     
+    "statustype": {
+        collection: "LHRISRen",
+        via: "statustype_id"
+    }, 
+
     translations: {
         collection: 'LHRISRenStatusTypeTrans',
         via: 'statustype_id'

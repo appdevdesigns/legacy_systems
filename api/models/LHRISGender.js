@@ -36,6 +36,11 @@ module.exports = {
         defaultsTo : "0"
     }, 
     
+    "gender": {
+        collection: "LHRISRen",
+        via: "gender_id"
+    },
+
     translations: {
         collection: 'LHRISGenderTrans',
         via: 'gender_id'

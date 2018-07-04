@@ -57,6 +57,11 @@ module.exports = {
             via: 'family_id'
         },
 
+        "address_record": {
+            collection: "LHRISAddress",
+            via: "family_id"
+        },
+
         accounts: {
             collection: 'LHRISAccount',
             via: 'family_id'

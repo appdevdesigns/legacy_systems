@@ -35,6 +35,11 @@ module.exports = {
         size : 1,
         defaultsTo : "0"
     }, 
+
+    "rentype": {
+        collection: "LHRISRen",
+        via: "rentype_id"
+    },
     
     translations: {
         collection: 'LHRISRenTypeTrans',
