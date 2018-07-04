@@ -51,6 +51,11 @@ module.exports = {
              via: "country_id"
         },
 
+        'phone_record': {
+             collection: "LHRISPhone",
+             via: "phone_countrycode"
+        },
+
         'translations': {
             collection:'LHRISCountryTrans',
             via:'country_id'

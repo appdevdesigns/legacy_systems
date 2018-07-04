@@ -34,6 +34,11 @@ module.exports = {
             defaultsTo : "0"
         }, 
 
+        phone_record: {
+            collection: 'LHRISPhone',
+            via: 'phonetype_id'
+        },
+
         translations:{
             collection:'LHRISPhoneTypeTrans',
             via:'phonetype_id'
