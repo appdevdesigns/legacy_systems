@@ -53,11 +53,6 @@ module.exports = {
             via: 'phone_id'
         },
         
-        emergency_contact: {
-            collection: "LHRISEmergencyContact",
-            via: "phone_id"
-        },
-        
         translations: {
             collection: 'LHRISPhoneTrans',
             via: 'phone_id'
