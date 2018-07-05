@@ -36,6 +36,11 @@ module.exports = {
         defaultsTo : "0"
     }, 
     
+    "xref_language_proficiency": {
+        collection: "LHRISXRefRenLanguageProficiency",
+        via: "proficiency_id"
+    },
+    
     translations: {
         collection: 'LHRISProficiencyTrans',
         via: 'proficiency_id'

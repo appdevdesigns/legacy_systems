@@ -36,6 +36,11 @@ module.exports = {
         defaultsTo : "0"
     }, 
     
+    emergency_contact: {
+        collection: "LHRISEmergencyContact",
+        via: "relationship_id"
+    },
+    
     translations: {
         collection: 'LHRISRelationshipTrans',
         via: 'relationship_id'

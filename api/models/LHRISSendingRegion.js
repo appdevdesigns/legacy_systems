@@ -40,6 +40,11 @@ module.exports = {
         model: 'LHRISCountry'
     }, 
     
+    "worker": {
+        collection: "LHRISWorker",
+        via: "sendingregion_id"
+    },
+    
     translations: {
         collection: 'LHRISSendingRegionTrans',
         via: 'sendingregion_id'

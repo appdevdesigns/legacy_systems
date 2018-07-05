@@ -44,6 +44,11 @@ module.exports = {
         country_id : {
             model: 'LHRISCountry'
         }, 
+        
+        "worker": {
+            collection: "LHRISWorker",
+            via: "account_id"
+        },
 
         account_isprimary : {
             type : "integer",

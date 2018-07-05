@@ -48,11 +48,21 @@ module.exports = {
             size: 11,
             defaultsTo : 0
         },
+        
+        assign_team: {
+            collection: "LHRISAssignTeam",
+            via: "mcc_id"
+        },
 
         is_protected: {
             type: "integer",
             size: 1,
             defaultsTo: 0
+        },
+        
+        translations: {
+            collection: "LHRISAssignMCCTrans",
+            via: "mcc_id"
         }
 
     }

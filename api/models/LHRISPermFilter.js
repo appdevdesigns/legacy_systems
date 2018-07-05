@@ -44,6 +44,16 @@ module.exports = {
         type : "text"
     }, 
     
+    "xref_perm_filter": {
+        collection: "LHRISXRefPermRenFilter",
+        via: "filter_id"
+    },
+    
+    "xref_perm_role": {
+        collection: "LHRISXRefPermRoleFilterAccess",
+        via: "filter_id"
+    },
+    
     translations: {
         collection: 'LHRISPermFilterTrans',
         via: 'filter_id'

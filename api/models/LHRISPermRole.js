@@ -30,6 +30,21 @@ module.exports = {
         autoIncrement : true
     }, 
     
+    xref_role_option: {
+        collection: "LHRISXRefPermDbfieldRoleOptionType",
+        via: "role_id"
+    },
+    
+    xref_role_filter: {
+        collection: "LHRISXRefPermRoleFilterAccess",
+        via: "role_id"
+    },
+    
+    xref_report_role: {
+        collection: "LHRISXRefReportRole",
+        via: "role_id"
+    },
+    
     translations: {
         collection: 'LHRISPermRoleTrans',
         via: 'role_id'

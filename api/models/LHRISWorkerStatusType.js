@@ -36,6 +36,16 @@ module.exports = {
         defaultsTo : "0"
     }, 
     
+    "worker": {
+        collection: "LHRISWorker",
+        via: "statustype_id"
+    },
+    
+    "status_history": {
+        collection: "LHRISWorkerStatusHisotry",
+        via: "statustype_id"
+    },
+    
     translations: {
         collection: 'LHRISWorkerStatusTypeTrans',
         via: 'statustype_id'

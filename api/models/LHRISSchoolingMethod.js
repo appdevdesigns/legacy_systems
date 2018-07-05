@@ -36,6 +36,11 @@ module.exports = {
         defaultsTo : "0"
     }, 
     
+    "dependants": {
+        collection: "LHRISDependent",
+        via: "schoolingmethod_id"
+    },
+    
     translations: {
         collection: 'LHRISSchoolingMethodTrans',
         via: 'schoolingmethod_id'

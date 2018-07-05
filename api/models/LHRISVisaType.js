@@ -40,6 +40,11 @@ module.exports = {
         model: 'LHRISCountry'
     }, 
     
+    passport_visa: {
+        collection: "LHRISPassprtVisa",
+        via: "visatype_id"
+    },
+    
     translations: {
         collection: 'LHRISVisaTypeTrans',
         via: 'visatype_id'

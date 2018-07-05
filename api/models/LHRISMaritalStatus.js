@@ -36,6 +36,11 @@ module.exports = {
         defaultsTo : "0"
     }, 
     
+    ren: {
+        collection: "LHRISRen",
+        via: "maritalstatus_id"
+    },
+    
     translations: {
         collection: 'LHRISMaritalStatusTrans',
         via: 'maritalstatus_id'

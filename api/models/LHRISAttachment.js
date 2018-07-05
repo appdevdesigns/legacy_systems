@@ -79,6 +79,21 @@ module.exports = {
         defaultsTo : "0"
     }, 
     
+    "image": {
+        collection: "LHRISImage",
+        via: "attachment_id"
+    },
+    
+    "base_attachment_id": {
+        collection: "LHRISImage",
+        via: "base_attachment_id"
+    },
+    
+    "xref_attachmentren": {
+        collection: "LHRISXRefAttachmentRen",
+        via: "attachment_id"
+    },
+    
     translations: {
         collection: 'LHRISAttachmentTrans',
         via: 'attachment_id'

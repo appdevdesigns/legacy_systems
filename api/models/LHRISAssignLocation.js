@@ -57,6 +57,16 @@ module.exports = {
         team_id: {
             collection: 'LHRISXRefTeamLocation',
             via: 'location_id'
+        },
+        
+        xref_loc_assign: {
+            collection: "LHRISXRefLocationAssignment",
+            via: "location_id"
+        },
+        
+        address: {
+            collection: 'LHRISAddress',
+            via: 'location_id'
         }
 
 

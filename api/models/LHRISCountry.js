@@ -60,6 +60,26 @@ module.exports = {
            collection: "LHRISAddress",
             via: "country_id"
         },
+        
+        "accounts": {
+            collection: 'LHRISAccount',
+            via: 'country_id'
+        },
+        
+        "primarycitizenship": {
+            collection: "LHRISRen",
+            via: "ren_primarycitizenship"
+        },
+        
+        "sending_region": {
+            collection: "LHRISSendingRegion",
+            via: "country_id"
+        },
+        
+        "visa_type": {
+            collection: "LHRISVisaType",
+            via: "country_id"
+        },
 
         'translations': {
             collection:'LHRISCountryTrans',

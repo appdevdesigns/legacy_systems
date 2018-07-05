@@ -36,6 +36,11 @@ module.exports = {
         defaultsTo : "0"
     }, 
     
+    interest: {
+        collection: "LHRISInterest",
+        via: "interesttype_id"
+    },
+    
     translations: {
         collection: 'LHRISInterestTypeTrans',
         via: 'interesttype_id'

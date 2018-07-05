@@ -36,6 +36,11 @@ module.exports = {
         defaultsTo : "0"
     }, 
     
+    "education": {
+        collection: "LHRISEducation",
+        via: "educationmajor_id"
+    },
+    
     translations: {
         collection: 'LHRISEducationMajorTrans',
         via: 'educationmajor_id'

@@ -36,6 +36,11 @@ module.exports = {
         defaultsTo : "0"
     }, 
     
+    insurance: {
+        collection: "LHRISInsurance",
+        via: "insurancetype_id"
+    },
+    
     translations: {
         collection: 'LHRISInsuranceTypeTrans',
         via: 'insurancetype_id'

@@ -55,6 +55,16 @@ module.exports = {
         size : 4,
         defaultsTo : "0"
     }, 
+    
+    "change": {
+        collection: "LHRISChange",
+        via: "dbfield_id"
+    },
+    
+    xref_role_option: {
+        collection: "LHRISXRefPermDbfieldRoleOptionType",
+        via: "dbfield_id" 
+    }
 
 
   }

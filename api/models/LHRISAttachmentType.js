@@ -36,6 +36,11 @@ module.exports = {
         defaultsTo : "0"
     }, 
     
+    attachment: {
+        collection: "LHRISAttachment",
+        via: "attachmenttype_id"
+    },
+    
     translations: {
         collection: 'LHRISAttachmentTypeTrans',
         via: 'attachmenttype_id'

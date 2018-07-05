@@ -36,6 +36,11 @@ module.exports = {
         defaultsTo : "0"
     }, 
     
+    "worker": {
+        collection: "LHRISWorker",
+        via: "fundingsource_id"
+    },
+    
     translations: {
         collection: 'LHRISFundingSourceTrans',
         via: 'fundingsource_id'

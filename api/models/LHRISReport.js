@@ -77,6 +77,21 @@ module.exports = {
         size : 3,
         defaultsTo : "0"
     }, 
+    
+    "report_fields": {
+        collection: "LHRISReportFields",
+        via: "report_id"
+    },
+    
+    "report_weight": {
+        collection: "LHRISReportWeight",
+        via: "report_id"
+    },
+    
+    "xref_report_role": {
+        collection: "LHRISXRefReportRole",
+        via: "report_id"
+    },
 
 
   }

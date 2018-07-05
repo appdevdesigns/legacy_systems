@@ -36,6 +36,11 @@ module.exports = {
         defaultsTo : "0"
     }, 
     
+    "worker": {
+        collection: "LHRISWorker",
+        via: "paysys_id"
+    },
+    
     translations: {
         collection: 'LHRISWorkerPaysysTrans',
         via: 'paysys_id'

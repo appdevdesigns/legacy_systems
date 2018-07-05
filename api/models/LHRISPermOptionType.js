@@ -41,6 +41,11 @@ module.exports = {
         size : 45
     }, 
     
+    xref_role_option: {
+        collection: "LHRISXRefPermDbfieldRoleOptionType",
+        via: "optiontype_id"
+    },
+    
     translations: {
         collection: 'LHRISPermOptionTypeTrans',
         via: 'optiontype_id'

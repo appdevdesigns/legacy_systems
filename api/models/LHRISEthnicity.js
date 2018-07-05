@@ -36,6 +36,11 @@ module.exports = {
         defaultsTo : "0"
     }, 
     
+    ren: {
+        collection: "LHRISRen",
+        via: "ethnicity_id"
+    },
+    
     translations: {
         collection: 'LHRISEthnicityTrans',
         via: 'ethnicity_id'

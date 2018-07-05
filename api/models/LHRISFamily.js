@@ -65,6 +65,26 @@ module.exports = {
         accounts: {
             collection: 'LHRISAccount',
             via: 'family_id'
+        },
+        
+        family_goal: {
+            collection: "LHRISFamilyGoal",
+            via: "family_id"
+        }
+        
+        change_group: {
+            collection: "LHRISChangeGroup",
+            via: "family_id"
+        },
+        
+        emergency_contact: {
+            collection: "LHRISEmergencyContact",
+            via: "family_id"
+        },
+        
+        insurance: {
+            collection: "LHRISInsurance",
+            via: "family_id"
         }
 
     }

@@ -186,8 +186,58 @@ module.exports = {
         languages: {
             collection: 'LHRISXRefRenLanguageProficiency',
             via: 'ren_id'
-        }
+        },
         
+        change_group: {
+            collection: "LHRISChangeGroup",
+            via: "ren_id"
+        },
+        
+        change_requester: {
+            collection: "LHRISChangeGroup",
+            via: "changegroup_requester_id"
+        },
+        
+        change_approver: {
+            collection: "LHRISChangeGroup",
+            via: "changegroup_approver_id"
+        },
+        
+        report: {
+            collection: "LHRISReport",
+            via: "ren_id"
+        },
+        
+        report_weight: {
+            collection: "LHRISReportWeight",
+            via: "ren_id"
+        },
+        
+        perm_access: {
+            collection: "LHRISPermAccess",
+            via: "ren_id"
+        },
+        
+        marriage_request: {
+            collection: "LHRISRen",
+            via: "marriagerequest_requestorrenid"
+        },
+        
+        marriage_joinee: {
+            collection: "LHRISRen",
+            via: "marriagerequest_joineerenid"
+        },
+        
+        "worker": {
+            collection: "LHRISWorker",
+            via: "ren_id"
+        }, 
+        
+        xref_perm_filter: {
+            collection: "LHRISXRefPermRenFilter",
+            via: "ren_id"
+        },
+
     }
 
 };

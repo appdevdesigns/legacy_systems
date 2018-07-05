@@ -46,6 +46,16 @@ module.exports = {
         size : 11,
         defaultsTo : "0"
     }, 
+    
+    "people": {
+        collection: "LHRISRen",
+        via: "ren_preferredlang"
+    },
+    
+    "xref_language_proficiency": {
+        collection: "LHRISXRefRenLanguageProficiency",
+        via: "language_id"
+    },
 
     translations: {
         collection: 'LHRISLanguageTrans',

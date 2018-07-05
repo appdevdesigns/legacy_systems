@@ -54,6 +54,11 @@ module.exports = {
         type : "integer",
         size : 11,
         defaultsTo : "0"
+    },
+    
+    assignment: {
+        collection: 'LHRISAssignment',
+        via: 'position_id'
     }, 
     
     translations: {

@@ -42,6 +42,11 @@ module.exports = {
         defaultsTo : "0"
     }, 
     
+    "education": {
+        collection: "LHRISEducation",
+        via: "degree_id"
+    },
+    
     translations: {
         collection: 'LHRISDegreeTrans',
         via: 'degree_id'

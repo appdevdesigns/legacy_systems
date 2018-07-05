@@ -57,13 +57,18 @@ module.exports = {
             defaultsTo: 1
         },
         
+        assignment: {
+            collection: "LHRISAssignment",
+            via: "team_id"
+        },
+        
         translations: {
             collection: 'LHRISAssignTeamTrans',
             via: 'team_id'
         },
         
         locationXref: {
-            collection: 'LHRISXrefTeamLocation',
+            collection: 'LHRISXRefTeamLocation',
             via: 'team_id'
         }
 

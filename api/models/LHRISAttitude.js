@@ -36,6 +36,21 @@ module.exports = {
         defaultsTo : "0"
     }, 
     
+    emergency_contact: {
+        collection: "LHRISEmergencyContact",
+        via: "attitude_id"
+    },
+    
+    worker_mother: {
+        collection: "LHRISWorker",
+        via: "worker_motherattitude"
+    },
+
+    worker_father: {
+        collection: "LHRISWorker",
+        via: "worker_fatherattitude"
+    },
+    
     translations: {
         collection: 'LHRISAttitudeTrans',
         via: 'attitude_id'

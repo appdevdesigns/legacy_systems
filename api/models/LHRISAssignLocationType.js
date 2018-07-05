@@ -32,6 +32,11 @@ module.exports = {
             type : "integer",
             size : 1,
             defaultsTo : "0"
+        },
+        
+        "assign_location": {
+            collection: "LHRISAssignLocation",
+            via: "locationtype_id"
         }, 
 
         translations:{

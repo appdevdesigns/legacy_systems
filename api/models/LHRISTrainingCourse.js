@@ -36,6 +36,11 @@ module.exports = {
         defaultsTo : "0"
     }, 
     
+    "training": {
+        collection: "LHRISTraining",
+        via: "course_id"
+    },
+    
     translations: {
         collection: 'LHRISTrainingCourseTrans',
         via: 'course_id'

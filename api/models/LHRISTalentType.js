@@ -36,6 +36,11 @@ module.exports = {
         defaultsTo : "0"
     }, 
     
+    "talent_record": {
+        collection: "LHRISTalent",
+        via: "talenttype_id"
+    },
+    
     translations: {
         collection: 'LHRISTalentTypeTrans',
         via: 'talenttype_id'

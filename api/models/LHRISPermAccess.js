@@ -33,6 +33,11 @@ module.exports = {
     "ren_id" : {
         model: 'LHRISRen'
     }, 
+    
+    "xref_perm_role_filter": {
+        collection: "LHRISXRefPermRoleFilterAccess",
+        via: "access_id"
+    },
 
     "viewer_guid" : {
         type : "string",

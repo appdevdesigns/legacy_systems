@@ -38,6 +38,16 @@ module.exports = {
             collection: 'LHRISPhone',
             via: 'phonetype_id'
         },
+        
+        emergency_contact_1: {
+            collection: "LHRISEmergencyContact",
+            vis: "ec_phone1_type"
+        },
+
+        emergency_contact_2: {
+            collection: "LHRISEmergencyContact",
+            vis: "ec_phone2_type"
+        },
 
         translations:{
             collection:'LHRISPhoneTypeTrans',

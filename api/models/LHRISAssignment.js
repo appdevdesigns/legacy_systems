@@ -63,6 +63,11 @@ module.exports = {
             size : 1,
             defaultsTo : "0"
         }, 
+        
+        "xref_loc_assign": {
+            collection: "LHRISXRefLocationAssignment",
+            via: "assignment_id"
+        }
 
 
     }

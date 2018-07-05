@@ -36,6 +36,11 @@ module.exports = {
         defaultsTo : "0"
     },
     
+    "alt_contact": {
+        collection: "LHRISAltContact",
+        via: "altcontacttype_id"
+    },
+    
     translations: {
         collection: 'LHRISAltContactTypeTrans',
         via: 'altcontacttype_id'
