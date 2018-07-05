@@ -70,7 +70,7 @@ module.exports = {
         family_goal: {
             collection: "LHRISFamilyGoal",
             via: "family_id"
-        }
+        },
         
         change_group: {
             collection: "LHRISChangeGroup",
