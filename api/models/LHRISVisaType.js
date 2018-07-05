@@ -41,7 +41,7 @@ module.exports = {
     }, 
     
     passport_visa: {
-        collection: "LHRISPassprtVisa",
+        collection: "LHRISPassportVisa",
         via: "visatype_id"
     },
     
