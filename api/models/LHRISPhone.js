@@ -39,7 +39,7 @@ module.exports = {
             model: 'LHRISPhoneType'
         },
 
-        country_id: {
+        phone_countrycode: {
             model: 'LHRISCountry'
         },
 
