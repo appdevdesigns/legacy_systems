@@ -42,7 +42,7 @@ module.exports = {
     },
     
     "status_history": {
-        collection: "LHRISWorkerStatusHisotry",
+        collection: "LHRISWorkerStatusHistory",
         via: "statustype_id"
     },
     
