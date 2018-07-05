@@ -219,7 +219,7 @@ module.exports = {
         },
         
         marriage_request: {
-            collection: "LHRISRen",
+            collection: "LHRISToolsMarriageRequest",
             via: "marriagerequest_requestorrenid"
         },
         
