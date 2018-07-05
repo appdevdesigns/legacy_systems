@@ -32,6 +32,11 @@ module.exports = {
             defaultsTo: 0
         },
         
+        assign_team: {
+            collection: "LHRISAssignTeam",
+            via: "rptlvl_id"
+        },
+        
         translations: {
             collection:'LHRISAssignRptLvlTrans',
             via: 'rptlvl_id'
