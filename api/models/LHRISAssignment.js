@@ -94,7 +94,9 @@ module.exports = {
                     a.*, 
                     tt.team_label,
                     ld.location_region, lt.location_label, lt.ancestry_label,
-                    mt.mcc_label	
+                    mt.mcc_label,
+                    acc.account_number, acc.country_id AS account_country_id,
+                    ct.country_label AS account_country_label
                     
                 FROM
                     -- My family members
@@ -106,7 +108,7 @@ module.exports = {
                     -- My preferred language
                     JOIN hris_language_data AS lang
                         ON myRen.ren_preferredlang = lang.language_id
-                    
+                        
                     -- Family members with primary assignments
                     JOIN hris_assignment AS a
                         ON a.ren_id = familyRen.ren_id
@@ -134,6 +136,17 @@ module.exports = {
                     JOIN hris_assign_mcc_trans AS mt
                         ON td.mcc_id = mt.mcc_id
                         AND mt.language_code = lang.language_i18n
+                    
+                    -- Worker
+                    JOIN hris_worker AS w
+                        ON familyRen.ren_id = w.ren_id
+                    
+                    -- Account
+                    LEFT JOIN hris_account AS acc
+                        ON w.account_id = acc.account_id
+                    LEFT JOIN hris_country_trans AS ct
+                        ON acc.country_id = ct.country_id
+                        AND ct.language_code = lang.language_i18n
                     
             `, [renID], (err, list) => {
                 if (err) reject(err);
