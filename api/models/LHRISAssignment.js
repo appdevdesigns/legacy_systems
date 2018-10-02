@@ -101,7 +101,7 @@ module.exports = {
                         FROM
                             hris_ren_data AS r
                             JOIN hris_language_data AS lang
-                                ON r.preferredlang = lang.language_id
+                                ON r.ren_preferredlang = lang.language_id
                         WHERE
                             r.ren_id = ?
                             
