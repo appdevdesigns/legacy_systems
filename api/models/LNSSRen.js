@@ -750,6 +750,9 @@ module.exports = {
      *          Optional. Only fetch staff from this territory region.
      *      - nssrenID
      *          Optional. Only fetch the staff with this nssren_id.
+     *      - territoryCode
+     *          Optional. Only fetch the staff from the territory with this code.
+     *          Mutually exclusive with `regionCode` option.
      * @return Deferred
      */
     staffInfo: function(options) {
@@ -760,15 +763,18 @@ module.exports = {
             throw new Error('legacy_hris connection not defined in the config');
         }
         
+        var regionCode, territoryCode;
+        
         if (typeof options == 'string') {
             // For backwards compatibility from when regionCode was the
             // only function argument.
-            var regionCode = options;
+            regionCode = options;
             options = {};
         }
         else {
             options = options || {};
-            var regionCode = options.regionCode || null;
+            regionCode = options.regionCode || null;
+            territoryCode = options.territoryCode || null;
         }
         var nssrenID = options.nssrenID || null;
         
@@ -802,93 +808,98 @@ module.exports = {
                     havingClause = " HAVING region = ? ";
                     sqlParams.push(regionCode);
                 }
+                else if (typeof territoryCode == 'string') {
+                    havingClause = " HAVING territoryCode = ? ";
+                    sqlParams.push(territoryCode);
+                }
                 
-                LHRISRen.query(" \
-                    SELECT \
-                        CONCAT( \
-                            r.ren_surname, ', ', r.ren_givenname, \
-                            ' (', r.ren_preferredname, ')' \
-                        ) AS name, \
-                        r.ren_namecharacters AS chineseName, \
-                        REPLACE(a.account_number, '-', '') AS accountNum, \
-                        \
-                        nr.nssren_salaryAmount AS baseSalary, \
-                        nr.nssren_ytdBalance AS accountBal, \
-                        \
-                        e.email_address AS email, \
-                        GROUP_CONCAT(DISTINCT \
-                            p.phone_number, ' (', \
-                            SUBSTRING(ptt.phonetype_label, 1, 1), ')' \
-                            SEPARATOR ', ' \
-                        ) AS phone, \
-                        \
-                        SUBSTRING( \
-                            t.territory_desc, 1, LOCATE('-', t.territory_desc)-1 \
-                        ) AS region, \
-                        GROUP_CONCAT(t.territory_desc SEPARATOR ', ') AS territory, \
-                        srt.sendingregion_label AS sendingRegion, \
-                        \
-                        r.ren_isfamilypoc AS isPOC, \
-                        g.goal_mpd AS mpdGoal, \
-                        w.worker_dateJoinedStaff AS dateJoined, \
-                        PERIOD_ADD( \
-                            CONCAT( \
-                                LEFT(w.worker_dateJoinedStaff, 4), \
-                                SUBSTR(w.worker_dateJoinedStaff, 6, 2) \
-                            ), 6 \
-                        ) AS periodJoined, \
-                        xtl.location_id, \
-                        nr.ren_guid, \
-                        nr.nssren_id \
-                    \
-                    FROM \
-                        "+hris+".hris_ren_data AS r \
-                        JOIN "+site+".nss_core_ren AS nr \
-                            ON nr.ren_guid = r.ren_guid \
-                            AND nr.nssren_isActive = 1 \
-                        \
-                        JOIN "+hris+".hris_worker AS w \
-                            ON r.ren_id = w.ren_id \
-                        JOIN "+hris+".hris_account AS a \
-                            ON w.account_id = a.account_id \
-                        \
-                        JOIN "+site+".nss_core_renterritory AS rt \
-                            ON nr.nssren_id = rt.nssren_id \
-                        JOIN "+site+".nss_core_territory AS t \
-                            ON rt.territory_id = t.territory_id \
-                        \
-                        LEFT JOIN "+hris+".hris_sendingregion_trans srt \
-                            ON w.sendingregion_id = srt.sendingregion_id \
-                            AND srt.language_code = 'mpd' \
-                        \
-                        LEFT JOIN "+hris+".hris_phone_data AS p \
-                            ON r.ren_id = p.ren_id \
-                        LEFT JOIN "+hris+".hris_phonetype_trans AS ptt \
-                            ON p.phonetype_id = ptt.phonetype_id \
-                            AND ptt.language_code = 'en' \
-                        LEFT JOIN "+hris+".hris_email AS e \
-                            ON r.ren_id = e.ren_id \
-                            AND e.email_issecure = 1 \
-                        \
-                        LEFT JOIN "+hris+".hris_assignment AS asgn \
-                            ON r.ren_id = asgn.ren_id \
-                            AND asgn.assignment_isprimary = 1 \
-                        LEFT JOIN "+hris+".hris_assign_team_data AS asgn_t \
-                            ON asgn.team_id = asgn_t.team_id \
-                        LEFT JOIN "+hris+".hris_xref_team_location AS xtl \
-                            ON asgn.team_id = xtl.team_id \
-                        \
-                        LEFT JOIN "+hris+".hris_familyGoal AS g \
-                            ON r.family_id = g.family_id \
-                    \
-                    "+ whereClause +" \
-                    \
-                    GROUP BY \
-                        r.ren_id \
-                    \
-                    "+ havingClause +" \
-                    \
-                ", sqlParams, function(err, results) {
+                LHRISRen.query(`
+                    SELECT
+                        CONCAT(
+                            r.ren_surname, ', ', r.ren_givenname,
+                            ' (', r.ren_preferredname, ')'
+                        ) AS name,
+                        r.ren_namecharacters AS chineseName,
+                        REPLACE(a.account_number, '-', '') AS accountNum,
+                        
+                        nr.nssren_salaryAmount AS baseSalary,
+                        nr.nssren_ytdBalance AS accountBal,
+                        
+                        e.email_address AS email,
+                        GROUP_CONCAT(DISTINCT
+                            p.phone_number, ' (',
+                            SUBSTRING(ptt.phonetype_label, 1, 1), ')'
+                            SEPARATOR ', '
+                        ) AS phone,
+                        
+                        SUBSTRING(
+                            t.territory_desc, 1, LOCATE('-', t.territory_desc)-1
+                        ) AS region,
+                        GROUP_CONCAT(DISTINCT t.territory_desc SEPARATOR ', ') AS territory,
+                        t.territory_GLCode AS territoryCode,
+                        srt.sendingregion_label AS sendingRegion,
+                        
+                        r.ren_isfamilypoc AS isPOC,
+                        g.goal_mpd AS mpdGoal,
+                        w.worker_dateJoinedStaff AS dateJoined,
+                        PERIOD_ADD(
+                            CONCAT(
+                                LEFT(w.worker_dateJoinedStaff, 4),
+                                SUBSTR(w.worker_dateJoinedStaff, 6, 2)
+                            ), 6
+                        ) AS periodJoined,
+                        xtl.location_id,
+                        nr.ren_guid,
+                        nr.nssren_id
+                    
+                    FROM
+                        ${hris}.hris_ren_data AS r
+                        JOIN ${site}.nss_core_ren AS nr
+                            ON nr.ren_guid = r.ren_guid
+                            AND nr.nssren_isActive = 1
+                        
+                        JOIN ${hris}.hris_worker AS w
+                            ON r.ren_id = w.ren_id
+                        JOIN ${hris}.hris_account AS a
+                            ON w.account_id = a.account_id
+                        
+                        JOIN ${site}.nss_core_renterritory AS rt
+                            ON nr.nssren_id = rt.nssren_id
+                        JOIN ${site}.nss_core_territory AS t
+                            ON rt.territory_id = t.territory_id
+                        
+                        LEFT JOIN ${hris}.hris_sendingregion_trans srt
+                            ON w.sendingregion_id = srt.sendingregion_id
+                            AND srt.language_code = 'mpd'
+                        
+                        LEFT JOIN ${hris}.hris_phone_data AS p
+                            ON r.ren_id = p.ren_id
+                        LEFT JOIN ${hris}.hris_phonetype_trans AS ptt
+                            ON p.phonetype_id = ptt.phonetype_id
+                            AND ptt.language_code = 'en'
+                        LEFT JOIN ${hris}.hris_email AS e
+                            ON r.ren_id = e.ren_id
+                            AND e.email_issecure = 1
+                        
+                        LEFT JOIN ${hris}.hris_assignment AS asgn
+                            ON r.ren_id = asgn.ren_id
+                            AND asgn.assignment_isprimary = 1
+                        LEFT JOIN ${hris}.hris_assign_team_data AS asgn_t
+                            ON asgn.team_id = asgn_t.team_id
+                        LEFT JOIN ${hris}.hris_xref_team_location AS xtl
+                            ON asgn.team_id = xtl.team_id
+                        
+                        LEFT JOIN ${hris}.hris_familyGoal AS g
+                            ON r.family_id = g.family_id
+                    
+                    ${whereClause}
+                    
+                    GROUP BY
+                        r.ren_id
+                    
+                    ${havingClause}
+                    
+                `, sqlParams, function(err, results) {
                     if (err) {
                         next(err);
                     } else {
