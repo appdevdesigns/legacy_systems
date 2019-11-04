@@ -248,10 +248,14 @@ module.exports = {
                     if (locations[locationID]) {
                         var regionID = locations[locationID].region_location_id;
                         var regionLabel = regions[regionID].name;
+                        // City just means their lowest level location
+                        var cityLabel = locations[locationID].location_label;
                     } else {
                         var regionLabel = 'none';
+                        var cityLabel = 'none';
                     }
                     workers[i].Region = regionLabel;
+                    workers[i].City = cityLabel;
                     
                     // Merge info for married couples
                     if (workersByAccount[accountNum]) {
