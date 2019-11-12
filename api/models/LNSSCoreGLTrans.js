@@ -24,7 +24,8 @@ module.exports = {
 
     attributes: {
 
-        gltran_id : {
+        'id' : {
+            columnName: 'gltran_id',
             type : "integer",
             size : 11,
             primaryKey : true,
@@ -251,21 +252,24 @@ module.exports = {
     monthlyIncomeExpenditure: function(startingPeriod, account) {
         var dfd = AD.sal.Deferred();
         
-        LNSSCoreGLTrans.query(" \
-            SELECT \
-                gltran_perpost AS period, \
-                ROUND(SUM(gltran_cramt)) AS income, \
-                ROUND(SUM(gltran_dramt)) AS expenditure \
-            FROM \
-                nss_core_gltran \
-            WHERE \
-                gltran_perpost > ? \
-                AND gltran_subacctnum = ? \
-            GROUP BY \
-                gltran_perpost \
-            ORDER BY \
-                gltran_perpost; \
-        ", [startingPeriod, account], function(err, results) {
+        LNSSCoreGLTrans.query(`
+            SELECT
+                gltran_perpost AS period,
+                ROUND(SUM(gltran_cramt)) AS income,
+                ROUND(SUM(gltran_dramt)) AS expenditure
+            FROM
+                nss_core_gltran
+            WHERE
+                gltran_perpost > ?
+                AND gltran_subacctnum = ?
+                AND gltran_acctnum NOT LIKE '1%%%'
+                AND gltran_acctnum NOT LIKE '2%%%'
+                AND gltran_acctnum NOT LIKE '3%%%'
+            GROUP BY
+                gltran_perpost
+            ORDER BY
+                gltran_perpost;
+        `, [startingPeriod, account], function(err, results) {
             if (err) {
                 dfd.reject(err);
             } else {
@@ -274,6 +278,94 @@ module.exports = {
         });
         
         return dfd;
+    },
+    
+    
+    /**
+     * For a given staff account, group and sum income & expenses by period.
+     *
+     * {
+     *    "YYYYMM": {
+     *      "localIncome": <number>,
+     *      "foreignIncome": <number>,
+     *      "expenses": <number>
+     *    },
+     *    ...
+     * }
+     *
+     * @param {string} startingPeriod
+     *      The gltran_perpost period to start counting from
+     *      Format: YYYYMM
+     * @param {string} account
+     *      The staff account number _0____
+     * @return {Promise}
+     *      Resolves with Array
+     */
+    incomeExpensesGroupedByPeriod: function(startingPeriod, account) {
+        return new Promise((resolve, reject) => {
+        
+            LNSSCoreGLTrans.query(`
+                SELECT
+                    gltran_perpost AS period,
+                    gltran_acctnum AS code,
+                    gltran_cramt AS credit,
+                    gltran_dramt AS debit
+                FROM
+                    nss_core_gltran
+                WHERE
+                    gltran_perpost > ?
+                    AND gltran_subacctnum = ?
+                    AND gltran_acctnum >= 4000
+                    AND gltran_acctnum < 8200
+                ORDER BY
+                    gltran_perpost;
+            `, [startingPeriod, account], (err, list) => {
+                if (err) {
+                    reject(err);
+                } 
+                else {
+                    var results = {};
+                    
+                    if (list && list[0]) {
+                        list.forEach((row) => {
+                            let period = row.period;
+                            let code = row.code;
+                            
+                            results[period] = results[period] || {
+                                localIncome: 0,
+                                foreignIncome: 0,
+                                expenses: 0
+                            };
+                            
+                            // Expenses
+                            if (code >= 6000 && code != 8100 && code < 8200) {
+                                results[period].expenses += row.debit - row.credit;
+                            }
+                            else if (code == 8100 && row.debit > 0) {
+                                results[period].expenses += row.debit;
+                            }
+                            
+                            // Local income
+                            if (code >= 4000 && code <= 4410) {
+                                results[period].localIncome += row.credit - row.debit;
+                            }
+                            else if (code == 8100) {
+                                results[period].localIncome += row.credit;
+                            }
+                            
+                            // Foreign income
+                            if (code >= 5000 && code <= 5780) {
+                                results[period].foreignIncome += row.credit - row.debit;
+                            }
+                            
+                        });
+                    }
+                    
+                    resolve(results);
+                }
+            });
+            
+        });
     },
     
     
@@ -689,21 +781,22 @@ module.exports = {
         var dfd = AD.sal.Deferred();
         var account = account || '_0____';
         
-        LNSSCoreGLTrans.query(" \
-            SELECT \
-                gltran_subacctnum AS accountNum, \
-                COUNT(DISTINCT gltran_perpost) AS count, \
-                GROUP_CONCAT(DISTINCT gltran_perpost) AS p \
-            FROM \
-                nss_core_gltran \
-            WHERE \
-                gltran_perpost > ? \
-                AND gltran_acctnum = '7000' \
-                AND gltran_cramt > 0 \
-                AND gltran_subacctnum LIKE ? \
-            GROUP BY \
-                gltran_subacctnum \
-        ", [startingPeriod, account], function(err, results) {
+        LNSSCoreGLTrans.query(`
+            SELECT
+                gltran_subacctnum AS accountNum,
+                COUNT(DISTINCT gltran_perpost) AS count,
+                GROUP_CONCAT(DISTINCT gltran_perpost) AS p
+            FROM
+                nss_core_gltran
+            WHERE
+                gltran_perpost > ?
+                AND gltran_acctnum = '7000'
+                AND gltran_cramt > 0
+                AND gltran_subacctnum LIKE ?
+                -- AND gltran_trandesc LIKE 'Short Pay (low acct)'
+            GROUP BY
+                gltran_subacctnum
+        `, [startingPeriod, account], function(err, results) {
             if (err) {
                 dfd.reject(err);
             } else {
