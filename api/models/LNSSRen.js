@@ -217,6 +217,71 @@ module.exports = {
     
     
     /**
+     * Finds the row of data for a staff from a unique token.
+     *
+     * This uses a new table `nss_core_token`.
+     *
+     * CREATE TABLE `nss_core_token` (
+     *   `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
+     *   `nssren_id` int(11) DEFAULT NULL,
+     *   `token` varchar(50) DEFAULT NULL,
+     *   `expiration` datetime DEFAULT NULL,
+     *   PRIMARY KEY (`id`)
+     *   UNIQUE KEY `token` (`token`)
+     * ) ENGINE=MyISAM DEFAULT CHARSET=ascii;
+     *
+     * @param {string} token
+     * @return {Promise}
+     */
+    findByToken: function(token) {
+        var hris = sails.config.connections.legacy_hris.database;
+        if (!hris) {
+            throw new Error('legacy_hris connection not defined in the config');
+        }
+        
+        // Housekeeping. Don't care when it finishes.
+        LNSSRen.query(`
+            DELETE FROM nss_core_token
+            WHERE expiration < NOW()
+        `);
+        
+        return new Promise((resolve, reject) => {
+            LNSSRen.query(
+                `
+                    SELECT
+                        nr.*,
+                        a.account_number
+                        
+                    FROM
+                        ${hris}.hris_ren_data AS r
+                        
+                        JOIN ${hris}.hris_worker AS w
+                            ON r.ren_id = w.ren_id
+                        JOIN ${hris}.hris_account AS a
+                            ON w.account_id = a.account_id
+                            
+                        JOIN nss_core_ren AS nr
+                            ON r.ren_guid = nr.ren_guid
+                        JOIN nss_core_token AS t
+                            ON t.nssren_id = nr.nssren_id
+                            
+                    WHERE
+                        t.token = ?
+                        AND t.expiration >= NOW()
+                `, 
+                [token], 
+                (err, list) => {
+                    if (err) reject(err);
+                    else {
+                        resolve(list);
+                    }
+                }
+            );
+        });
+    },
+    
+    
+    /**
      * Finds the row of data for a staff from either 
      *      - their viewer_guid
      *      - or their account_number
