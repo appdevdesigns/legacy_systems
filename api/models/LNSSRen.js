@@ -224,7 +224,7 @@ module.exports = {
      * CREATE TABLE `nss_core_token` (
      *   `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
      *   `nssren_id` int(11) DEFAULT NULL,
-     *   `token` varchar(50) DEFAULT NULL,
+     *   `token` varchar(64) DEFAULT NULL,
      *   `expiration` datetime DEFAULT NULL,
      *   PRIMARY KEY (`id`)
      *   UNIQUE KEY `token` (`token`)
