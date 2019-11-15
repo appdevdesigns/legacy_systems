@@ -282,10 +282,12 @@ module.exports = {
     
     
     /**
-     * For a given staff account, group and sum income & expenses by period.
+     * For a given staff account, group and sum income & expenses by calendar 
+     * period.
      *
      * {
      *    "YYYYMM": {
+     *      "fiscalPeriod": <string>, // different from calendar period
      *      "localIncome": <number>,
      *      "foreignIncome": <number>,
      *      "expenses": <number>
@@ -294,19 +296,20 @@ module.exports = {
      * }
      *
      * @param {string} startingPeriod
-     *      The gltran_perpost period to start counting from
+     *      The gltran_perpost fiscal period to start counting from.
      *      Format: YYYYMM
      * @param {string} account
-     *      The staff account number _0____
+     *      The staff account number
      * @return {Promise}
-     *      Resolves with Array
+     *      Resolves with dictionary basic object indexed by calendar period.
      */
     incomeExpensesGroupedByPeriod: function(startingPeriod, account) {
         return new Promise((resolve, reject) => {
         
             LNSSCoreGLTrans.query(`
                 SELECT
-                    gltran_perpost AS period,
+                    PERIOD_ADD(gltran_perpost, -6) AS calendarPeriod,
+                    gltran_perpost AS fiscalPeriod,
                     gltran_acctnum AS code,
                     gltran_cramt AS credit,
                     gltran_dramt AS debit
@@ -328,10 +331,11 @@ module.exports = {
                     
                     if (list && list[0]) {
                         list.forEach((row) => {
-                            let period = row.period;
+                            let period = row.calendarPeriod;
                             let code = row.code;
                             
                             results[period] = results[period] || {
+                                fiscalPeriod: row.fiscalPeriod,
                                 localIncome: 0,
                                 foreignIncome: 0,
                                 expenses: 0

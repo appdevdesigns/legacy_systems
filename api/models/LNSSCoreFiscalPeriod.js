@@ -124,7 +124,15 @@ module.exports = {
     
     
     /**
-     * Generate a lookup list of fiscal periods to calendar months.
+     * Generate a lookup list of fiscal periods to the calendar months of their
+     * cutoff dates.
+     *
+     * Not currently used by anything.
+     *
+     * Usually, the cutoff dates do work out in a logical way. But it's possible
+     * that they don't, depending on real world circumstances around the period
+     * closing time. So the better way is to just subtract 6 months from the
+     * fiscal period to get the calendar date.
      *
      * @param {object} [options]
      * @param {string|date} [options.min]
