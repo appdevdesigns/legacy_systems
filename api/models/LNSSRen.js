@@ -354,6 +354,42 @@ module.exports = {
     
     
     /**
+     * Get all the cached estimated account balances, indexed by nssren_id.
+     * This cache is refreshed daily by the Stewardwise cron job.
+     * 
+     * @return {Promise}
+     */
+    cachedEstimatedBalances: function() {
+        var results = {
+        /*
+            <nssren_id>: <estimated balance>,
+            ...
+        */
+        };
+        
+        return new Promise((resolve, reject) => {
+            LNSSRen.query(`
+                SELECT
+                    nssren_id,
+                    estimated_balance
+                FROM
+                    nss_cache_acctbalance b
+                GROUP BY
+                    nssren_id
+            `, (err, list) => {
+                if (err) reject(err);
+                else {
+                    list.forEach((row) => {
+                        results[row.nssren_id] = row.estimated_balance;
+                    });
+                    resolve(results);
+                }
+            });
+        });
+    },
+    
+    
+    /**
      * Find the transactions from the current open period
      * - payroll
      * - payroll adjustments
