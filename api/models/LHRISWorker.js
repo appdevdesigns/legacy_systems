@@ -242,17 +242,26 @@ module.exports = {
                 // Use the location+region lists to add to the worker info
                 var workersByRegion = {};
                 var workersByAccount = {};
+                
+                
                 for (var i=0; i<workers.length; i++) {
+                    var regionLabel = 'none';
+                    var cityLabel = 'none';
                     var locationID = workers[i].location_id;
                     var accountNum = parseInt(workers[i]['Account Number'].replace(/\D/g, ''));
+                    
                     if (locations[locationID]) {
                         var regionID = locations[locationID].region_location_id;
-                        var regionLabel = regions[regionID].name;
                         // City just means their lowest level location
-                        var cityLabel = locations[locationID].location_label;
-                    } else {
-                        var regionLabel = 'none';
-                        var cityLabel = 'none';
+                        cityLabel = locations[locationID].location_label;
+                        
+                        if (regions[regionID]) {
+                            regionLabel = regions[regionID].name;
+                        }
+                        else {
+                            // No region found for this city
+                            regionLabel = cityLabel;
+                        }
                     }
                     workers[i].Region = regionLabel;
                     workers[i].City = cityLabel;
