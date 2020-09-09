@@ -350,8 +350,6 @@ module.exports = {
                     nss_core_gltran
                 WHERE
                     gltran_perpost > ?
-                    AND gltran_acctnum >= 4000
-                    AND gltran_acctnum < 8200
                     AND gltran_subacctnum IN (${accountString})
                 ORDER BY
                     gltran_perpost;
@@ -374,25 +372,70 @@ module.exports = {
                                 expenses: 0
                             };
                             
-                            // Expenses
-                            if (code >= 6000 && code != 8100 && code < 8200) {
-                                results[period].expenses += row.debit - row.credit;
-                            }
-                            else if (code == 8100 && row.debit > 0) {
-                                results[period].expenses += row.debit;
+                            //// Old COA (before fiscal year 2021)
+                            if (row.fiscalPeriod < 202101) {
+                                // Expenses
+                                if (code >= 6000 && code != 8100 && code < 8200) {
+                                    results[period].expenses += row.debit - row.credit;
+                                }
+                                else if (code == 8100 && row.debit > 0) {
+                                    results[period].expenses += row.debit;
+                                }
+                                
+                                // Local income
+                                if (code >= 4000 && code <= 4410) {
+                                    results[period].localIncome += row.credit - row.debit;
+                                }
+                                else if (code == 8100) {
+                                    results[period].localIncome += row.credit;
+                                }
+                                
+                                // Foreign income
+                                if (code >= 5000 && code <= 5780) {
+                                    results[period].foreignIncome += row.credit - row.debit;
+                                }
                             }
                             
-                            // Local income
-                            if (code >= 4000 && code <= 4410) {
-                                results[period].localIncome += row.credit - row.debit;
-                            }
-                            else if (code == 8100) {
-                                results[period].localIncome += row.credit;
-                            }
-                            
-                            // Foreign income
-                            if (code >= 5000 && code <= 5780) {
-                                results[period].foreignIncome += row.credit - row.debit;
+                            // New COA (fiscal year 2021 and after)
+                            else {
+                                let newCOA = {
+                                    expenses: [
+                                        6111, 6611, 6621, 7111, 7131, 7211, 
+                                        7511, 8111, 8121, 8211, 8411, 8611, 
+                                        8631, 8641, 8642, 8681, 8682, 8683, 
+                                        8684, 8711, 8721, 8911, 8921, 8931, 
+                                        8941, 8951, 8991, 9511, 9521, 9591
+                                    ],
+                                    localIncome: [
+                                        41111, 41112, 41113, 41114, 4391, 4411, 
+                                        4911, 4912, 4921, 4931, 4991, 9191
+                                    ],
+                                    foreignIncome: [5111, 5611, 5621]
+                                };
+                                
+                                // Expenses
+                                if (code == 9111 && row.debit > 0) {
+                                    // local transfer out
+                                    results[period].expenses += row.debit;
+                                }
+                                else if (newCOA.expenses.indexOf(code) >= 0) {
+                                    results[period].expenses += row.debit - row.credit;
+                                }
+                                
+                                // Local income
+                                else if (code == 9111 && row.credit > 0) {
+                                    // local transfer in
+                                    results[period].localIncome += row.credit;
+                                }
+                                else if (newCOA.localIncome.indexOf(code) >= 0) {
+                                    results[period].localIncome += row.credit - row.debit;
+                                }
+                                
+                                // Foreign income
+                                else if (newCOA.foreignIncome.indexOf(code) >= 0) {
+                                    results[period].foreignIncome += row.credit - row.debit;
+                                }
+                                
                             }
                             
                         });
