@@ -282,8 +282,30 @@ module.exports = {
     
     
     /**
-     * For a given staff account, group and sum income & expenses by calendar 
-     * period.
+     * Wrapper for incomeExpensesGroupedByPeriod_multiAccounts().
+     *
+     * This finds all related staff account numbers for the given account,
+     * and calculates the I&E for those as well.
+     *
+     * @param {string} startingPeriod
+     *      The gltran_perpost fiscal period to start counting from.
+     *      Format: YYYYMM
+     * @param {string} account
+     *      The staff account number
+     * @return {Promise}
+     *      Resolves with dictionary basic object indexed by calendar period.
+     */
+    incomeExpenseGroupedByPeriod: function(startingPeriod, account) {
+        return LHRISAccount.relatedAccounts(account)
+            .then((allAccounts) => {
+                return LNSSCoreGLTran.incomeExpensesGroupedByPeriod_multiAccounts(startingPeriod, allAccounts);
+            });
+    },
+    
+    
+    /**
+     * For a given array of staff accounts, group and sum income & expenses by 
+     * calendar period.
      *
      * {
      *    "YYYYMM": {
@@ -298,14 +320,25 @@ module.exports = {
      * @param {string} startingPeriod
      *      The gltran_perpost fiscal period to start counting from.
      *      Format: YYYYMM
-     * @param {string} account
-     *      The staff account number
+     * @param {string|array} accounts
+     *      The staff account number(s)
      * @return {Promise}
      *      Resolves with dictionary basic object indexed by calendar period.
      */
-    incomeExpensesGroupedByPeriod: function(startingPeriod, account) {
+    incomeExpensesGroupedByPeriod_multiAccounts: function(startingPeriod, accounts) {
         return new Promise((resolve, reject) => {
-        
+            
+            // Build account number string for use with IN ('foo', 'bar', ...)
+            var accountString;
+            if (!Array.isArray(accounts)) {
+                accounts = [accounts];
+            }
+            for (let i=0; i<accounts.length; i++) {
+                // Escape apostrophe chars for SQL
+                accounts[i] = String(accounts[i]).replace(/'/g, "''");
+            }
+            accountString = "'" + accounts.join("','") + "'";
+            
             LNSSCoreGLTrans.query(`
                 SELECT
                     PERIOD_ADD(gltran_perpost, -6) AS calendarPeriod,
@@ -317,9 +350,9 @@ module.exports = {
                     nss_core_gltran
                 WHERE
                     gltran_perpost > ?
-                    AND gltran_subacctnum = ?
                     AND gltran_acctnum >= 4000
                     AND gltran_acctnum < 8200
+                    AND gltran_subacctnum IN (${accountString})
                 ORDER BY
                     gltran_perpost;
             `, [startingPeriod, account], (err, list) => {

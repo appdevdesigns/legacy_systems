@@ -57,6 +57,51 @@ module.exports = {
         }
 
 
+    },
+    
+    
+    ////////////////////////////
+    // Model class methods
+    ////////////////////////////
+    
+    /**
+     * Finds the other account numbers from the same family and country.
+     * Versions of the account numbers with non-alphanumeric characters stripped
+     * out will also be included in the results.
+     *
+     * @param {string} accountNum
+     * @return {Promise} 
+     */
+    relatedAccounts: function(accountNum) {
+        return new Promise((resolve, reject) => {
+            LHRISAccount.query(`
+                SELECT
+                    a2.account_number
+                FROM
+                    hris_account AS a1
+                    JOIN hris_account AS a2
+                        ON a1.family_id = a2.family_id
+                        AND a1.country_id = a2.country_id
+                WHERE
+                    a1.account_number = ?
+            `, [accountNum], (err, list) => {
+                if (err) reject(err);
+                else {
+                    let results = [];
+                    list.forEach((row) => {
+                        results.push(row.account_number);
+                        // Also add a version stripped of all non-alphanumerics
+                        let stripped = row.account_number.replace(/\W/g, '');
+                        if (results.indexOf(stripped) < 0) {
+                            results.push(stripped);
+                        }
+                    });
+                    
+                    resolve(results);
+                }
+            });
+        });
     }
+    
 };
 
