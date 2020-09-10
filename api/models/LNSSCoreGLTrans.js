@@ -295,10 +295,10 @@ module.exports = {
      * @return {Promise}
      *      Resolves with dictionary basic object indexed by calendar period.
      */
-    incomeExpenseGroupedByPeriod: function(startingPeriod, account) {
+    incomeExpensesGroupedByPeriod: function(startingPeriod, account) {
         return LHRISAccount.relatedAccounts(account)
             .then((allAccounts) => {
-                return LNSSCoreGLTran.incomeExpensesGroupedByPeriod_multiAccounts(startingPeriod, allAccounts);
+                return LNSSCoreGLTrans.incomeExpensesGroupedByPeriod_multiAccounts(startingPeriod, allAccounts);
             });
     },
     
@@ -353,7 +353,7 @@ module.exports = {
                     AND gltran_subacctnum IN (${accountString})
                 ORDER BY
                     gltran_perpost;
-            `, [startingPeriod, account], (err, list) => {
+            `, [startingPeriod], (err, list) => {
                 if (err) {
                     reject(err);
                 } 
