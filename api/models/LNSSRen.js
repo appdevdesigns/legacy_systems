@@ -294,7 +294,7 @@ module.exports = {
      * @param object options
      *      { 
      *          viewerGUID: <string>,   // guid from CAS
-     *          account: <string>,      // _0____ from HRIS
+     *          account: <string>,      // staff account from HRIS
      *      }
      * @return Deferred
      */
@@ -310,34 +310,34 @@ module.exports = {
         }
         
         var viewerGUID = options.viewerGUID || '%';
-        var account = options.account || '_0____';
+        var account = options.account || '%';
         
-        LNSSRen.query(" \
-            SELECT \
-                nr.*, \
-                a.account_number, \
-                r.ren_givenname, r.ren_surname, r.ren_preferredname, \
-                CONCAT( \
-                    r.ren_surname, ', ', \
-                    r.ren_givenname, ' (', \
-                    r.ren_preferredname, ')' \
-                ) AS 'name' \
-            FROM \
-                "+hris+".hris_perm_access AS pa \
-                JOIN "+hris+".hris_ren_data AS r \
-                    ON pa.viewer_guid LIKE ? \
-                    AND pa.ren_id = r.ren_id \
-                \
-                JOIN "+hris+".hris_worker AS w \
-                    ON w.ren_id = r.ren_id \
-                JOIN "+hris+".hris_account AS a \
-                    ON w.account_id = a.account_id \
-                    AND REPLACE(a.account_number, '-', '') LIKE ? \
-                \
-                JOIN nss_core_ren AS nr \
-                    ON r.ren_guid = nr.ren_guid \
-            \
-        ", [viewerGUID, account], function(err, results) {
+        LNSSRen.query(`
+            SELECT
+                nr.*,
+                a.account_number,
+                r.ren_givenname, r.ren_surname, r.ren_preferredname,
+                CONCAT(
+                    r.ren_surname, ', ',
+                    r.ren_givenname, ' (',
+                    r.ren_preferredname, ')'
+                ) AS 'name'
+            FROM
+                ${hris}.hris_perm_access AS pa
+                JOIN ${hris}.hris_ren_data AS r
+                    ON pa.viewer_guid LIKE ?
+                    AND pa.ren_id = r.ren_id
+                
+                JOIN ${hris}.hris_worker AS w
+                    ON w.ren_id = r.ren_id
+                JOIN ${hris}.hris_account AS a
+                    ON w.account_id = a.account_id
+                    AND a.account_number LIKE ?
+                
+                JOIN nss_core_ren AS nr
+                    ON r.ren_guid = nr.ren_guid
+            
+        `, [viewerGUID, account], function(err, results) {
             if (err) dfd.reject(err);
             else {
                 dfd.resolve(results);
@@ -827,7 +827,9 @@ module.exports = {
      *      {
      *        "name": <string>,         // Surname, Given name (Preferred)
      *        "chineseName": <string>,
-     *        "accountNum": <string>,   // X0XXXX
+     *        "accountNum": <string>,   // primary account number
+     *        "allAccountNums": <array>,// all account numbers from this staff's
+     *                                  // family within the primary country.
      *        "baseSalary": <integer>,  // base monthly salary
      *        "accountBal": <integer>,  // ytdBalance
      *        "email": <string>,        // secure email
@@ -933,11 +935,18 @@ module.exports = {
                             SEPARATOR ', '
                         ) AS phone,
                         
+                        -- Stewardwise region abbreviation
                         SUBSTRING(
                             t.territory_desc, 1, LOCATE('-', t.territory_desc)-1
                         ) AS region,
+                        
+                        -- Stewardwise territory description
                         GROUP_CONCAT(DISTINCT t.territory_desc SEPARATOR ', ') AS territory,
+                        
+                        -- Stewardwise territory code
                         t.territory_GLCode AS territoryCode,
+                        
+                        -- HRIS sending region
                         srt.sendingregion_label AS sendingRegion,
                         
                         r.ren_isfamilypoc AS isPOC,
@@ -1027,6 +1036,27 @@ module.exports = {
                     }
                     next();
                 });
+            },
+            
+            function(next) {
+                // Find all account numbers from each staff's family
+                // within the primary country.
+                async.eachSeries(
+                    staff, 
+                    (s, nextStaff) => {
+                        let primaryAccount = s.accountNum;
+                        LHRISAccount.relatedAccounts(primaryAccount)
+                        .then((accountsList) => {
+                            s.allAccountNums = accountList;
+                            nextStaff();
+                        })
+                        .catch(nextStaff);
+                    }, 
+                    (err) => {
+                        if (err) next(err);
+                        else next();
+                    }
+                );
             }
             
         ], function(err) {

@@ -142,31 +142,31 @@ module.exports = {
     recent12Periods: function() {
         var dfd = AD.sal.Deferred();
         // Find the empty periods from this year, where all balances are zero.
-        LNSSCoreAccountHistory.query("\
-            SELECT \
-                accounthistory_fiscalyear AS year, \
-                SUM(h1.accounthistory_ytdbal01) AS s1, \
-                SUM(h1.accounthistory_ytdbal02) AS s2, \
-                SUM(h1.accounthistory_ytdbal03) AS s3, \
-                SUM(h1.accounthistory_ytdbal04) AS s4, \
-                SUM(h1.accounthistory_ytdbal05) AS s5, \
-                SUM(h1.accounthistory_ytdbal06) AS s6, \
-                SUM(h1.accounthistory_ytdbal07) AS s7, \
-                SUM(h1.accounthistory_ytdbal08) AS s8, \
-                SUM(h1.accounthistory_ytdbal09) AS s9, \
-                SUM(h1.accounthistory_ytdbal10) AS s10, \
-                SUM(h1.accounthistory_ytdbal11) AS s11, \
-                SUM(h1.accounthistory_ytdbal12) AS s12 \
-            FROM \
-                nss_core_accounthistory AS h1 \
-                JOIN ( \
-                    SELECT DISTINCT h2.accounthistory_fiscalyear AS yyyy \
-                    FROM nss_core_accounthistory AS h2 \
-                    ORDER BY h2.accounthistory_fiscalyear DESC \
-                    LIMIT 1 \
-                ) AS recentOneYear \
-                    ON h1.accounthistory_fiscalyear = recentOneYear.yyyy \
-        ", function(err, results) {
+        LNSSCoreAccountHistory.query(`
+            SELECT
+                accounthistory_fiscalyear AS year,
+                SUM(h1.accounthistory_ytdbal01) AS s1,
+                SUM(h1.accounthistory_ytdbal02) AS s2,
+                SUM(h1.accounthistory_ytdbal03) AS s3,
+                SUM(h1.accounthistory_ytdbal04) AS s4,
+                SUM(h1.accounthistory_ytdbal05) AS s5,
+                SUM(h1.accounthistory_ytdbal06) AS s6,
+                SUM(h1.accounthistory_ytdbal07) AS s7,
+                SUM(h1.accounthistory_ytdbal08) AS s8,
+                SUM(h1.accounthistory_ytdbal09) AS s9,
+                SUM(h1.accounthistory_ytdbal10) AS s10,
+                SUM(h1.accounthistory_ytdbal11) AS s11,
+                SUM(h1.accounthistory_ytdbal12) AS s12
+            FROM
+                nss_core_accounthistory AS h1
+                JOIN (
+                    SELECT DISTINCT h2.accounthistory_fiscalyear AS yyyy
+                    FROM nss_core_accounthistory AS h2
+                    ORDER BY h2.accounthistory_fiscalyear DESC
+                    LIMIT 1
+                ) AS recentOneYear
+                    ON h1.accounthistory_fiscalyear = recentOneYear.yyyy
+        `, function(err, results) {
             if (err) {
                 dfd.reject(err);
             } else {
@@ -272,7 +272,7 @@ module.exports = {
     balanceForPeriods: function(periods, account) {
         var dfd = AD.sal.Deferred();
         
-        var accountFilter = account || '_0____';
+        var accountFilter = account || '%';
         
         //// Step 1: Fetch all balances from the years containing the requested
         ////         fiscal periods.
