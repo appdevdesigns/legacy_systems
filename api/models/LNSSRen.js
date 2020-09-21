@@ -894,26 +894,33 @@ module.exports = {
             
             function(next) {
                 var sqlParams = [];
+                var whereConds = [];
                 
                 // If nssrenID was specified, then filter results by adding a
-                // WHERE clause to the sql.
+                // conditions
                 var whereClause = "";
                 if (nssrenID) {
                     whereClause = " WHERE nr.nssren_id = ? ";
+                    whereConds.push("nr.nssren_id = ?");
                     sqlParams.push(nssrenID);
                 }
                 
-                
-                // If region was specified, then filter results by adding a
-                // HAVING clause to the sql.
-                var havingClause = "";
                 if (typeof regionCode == 'string') {
-                    havingClause = " HAVING region = ? ";
+                    whereConds.push(`
+                        SUBSTRING(
+                            t.territory_desc, 1, LOCATE('-', t.territory_desc)-1
+                        ) = ?
+                    `);
                     sqlParams.push(regionCode);
                 }
                 else if (typeof territoryCode == 'string') {
-                    havingClause = " HAVING territoryCode = ? ";
+                    whereConds.push("territory_GLCode = ?");
                     sqlParams.push(territoryCode);
+                }
+                
+                // Assemble conditions into WHERE clause
+                if (whereConds.length > 0) {
+                    whereClause = "WHERE " + whereConds.join(' AND ');
                 }
                 
                 LHRISRen.query(`
@@ -923,7 +930,7 @@ module.exports = {
                             ' (', r.ren_preferredname, ')'
                         ) AS name,
                         r.ren_namecharacters AS chineseName,
-                        REPLACE(a.account_number, '-', '') AS accountNum,
+                        a.account_number AS accountNum,
                         
                         nr.nssren_salaryAmount AS baseSalary,
                         nr.nssren_ytdBalance AS accountBal,
@@ -1007,8 +1014,6 @@ module.exports = {
                     GROUP BY
                         r.ren_id
                     
-                    ${havingClause}
-                    
                 `, sqlParams, function(err, results) {
                     if (err) {
                         next(err);
@@ -1047,7 +1052,7 @@ module.exports = {
                         let primaryAccount = s.accountNum;
                         LHRISAccount.relatedAccounts(primaryAccount)
                         .then((accountsList) => {
-                            s.allAccountNums = accountList;
+                            s.allAccountNums = accountsList;
                             nextStaff();
                         })
                         .catch(nextStaff);

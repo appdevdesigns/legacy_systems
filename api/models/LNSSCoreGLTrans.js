@@ -519,7 +519,7 @@ module.exports = {
                                 finalResult.expenditure[sub] = finalResult.expenditure[sub] || 0;
                                 // Account transfers out
                                 if (['8100', '9511'].indexOf(row.account) >= 0 && row.debit > 0) {
-                                    finalResult.expenditure[sub] = += row.debit;
+                                    finalResult.expenditure[sub] += row.debit;
                                 }
                                 // All other expenses
                                 else if (expenseAccounts.indexOf(row.account) >= 0) {
@@ -552,7 +552,7 @@ module.exports = {
                                     finalResult.localIncome[sub] += (row.credit - row.debit);
                                     finalResult.income[sub] += (row.credit - row.debit);
                                 }
-                                else if (row.period < 201201 && row.account = 8100 && row.credit > 0) {
+                                else if (row.period < 201201 && row.account == 8100 && row.credit > 0) {
                                     // Local inbound transfers (no debit)
                                     finalResult.localIncome[sub] += row.credit;
                                     finalResult.income[sub] += row.credit;
