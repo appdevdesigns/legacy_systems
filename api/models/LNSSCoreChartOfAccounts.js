@@ -91,7 +91,9 @@ module.exports = {
                         `, (err, list) => {
                             if (err) next(err);
                             else {
-                                finalResult = finalResult.concat(list);
+                                list.forEach((row) => {
+                                    finalResult.push(row.chartofaccounts_accountNum);
+                                });
                                 next()
                             }
                         });
@@ -113,7 +115,9 @@ module.exports = {
                         `, (err, list) => {
                             if (err) next(err);
                             else {
-                                finalResult = finalResult.concat(list);
+                                list.forEach((row) => {
+                                    finalResult.push(row.chartofaccounts_accountNum);
+                                });
                                 next()
                             }
                         });

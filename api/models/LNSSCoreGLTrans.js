@@ -482,7 +482,9 @@ module.exports = {
             
             async.series([
                 (next) => {
-                    // This includes both new and old COAs
+                    // Use the 'chartofaccounts_transactiontype' column to
+                    // determine whether an account is an Expense or not.
+                    // This includes both new and old COAs.
                     LNSSCoreChartOfAccounts.expenseAccounts()
                     .then((list) => {
                         expenseAccounts = list;
@@ -517,13 +519,13 @@ module.exports = {
                                 
                                 //// Expenditure
                                 finalResult.expenditure[sub] = finalResult.expenditure[sub] || 0;
-                                // Account transfers out
+                                // Account transfers out (no credit)
                                 if (['8100', '9511'].indexOf(row.account) >= 0 && row.debit > 0) {
                                     finalResult.expenditure[sub] += row.debit;
                                 }
                                 // All other expenses
                                 else if (expenseAccounts.indexOf(row.account) >= 0) {
-                                    finalResult.expenditure[sub] = finalResult.expenditure[sub] || 0;
+                                    finalResult.expenditure[sub] += (row.debit - row.credit);
                                 }
                                 
                                 //// All income
@@ -535,7 +537,7 @@ module.exports = {
                                     // Old COA
                                     (row.period < 202101 && row.account >= 5000 && row.account <= 5780) || 
                                     // New COA
-                                    (row.period >= 201201 && newCOA.foreignIncome.indexOf(row.account) >= 0)
+                                    (row.period >= 202101 && newCOA.foreignIncome.indexOf(row.account) >= 0)
                                 ) {
                                     finalResult.foreignIncome[sub] += (row.credit - row.debit);
                                     finalResult.income[sub] += (row.credit - row.debit);
@@ -545,20 +547,20 @@ module.exports = {
                                 finalResult.localIncome[sub] = finalResult.localIncome[sub] || 0;
                                 if (
                                     // Old COA
-                                    (row.period < 201201 && row.account >= 4000 && row.account <= 4410) ||
+                                    (row.period < 202101 && row.account >= 4000 && row.account <= 4410) ||
                                     // New COA
-                                    (row.period >= 201201 && newCOA.localIncome.indexOf(row.account) >= 0)
+                                    (row.period >= 202101 && newCOA.localIncome.indexOf(row.account) >= 0)
                                 ) {
                                     finalResult.localIncome[sub] += (row.credit - row.debit);
                                     finalResult.income[sub] += (row.credit - row.debit);
                                 }
-                                else if (row.period < 201201 && row.account == 8100 && row.credit > 0) {
+                                else if (row.period < 202101 && row.account == 8100 && row.credit > 0) {
                                     // Local inbound transfers (no debit)
                                     finalResult.localIncome[sub] += row.credit;
                                     finalResult.income[sub] += row.credit;
                                 }
                             });
-                        next();
+                            next();
                         }
                     });
                 },
