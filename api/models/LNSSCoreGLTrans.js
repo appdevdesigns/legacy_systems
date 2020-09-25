@@ -565,9 +565,6 @@ module.exports = {
                     });
                 },
                 
-                (next) => {
-                    
-                },
             ], (err, list) => {
                 if (err) reject(err);
                 else {
