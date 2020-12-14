@@ -854,8 +854,12 @@ module.exports = {
      *      - nssrenID
      *          Optional. Only fetch the staff with this nssren_id.
      *      - territoryCode
-     *          Optional. Only fetch the staff from the territory with this code.
-     *          Mutually exclusive with `regionCode` option.
+     *          Optional. Only fetch the staff from the territory with this GL
+     *          code. Mutually exclusive with `regionCode` option.
+     *      - territoryDesc
+     *          Optional. Only fetch the staff from the territory that begins
+     *          with this string. Mutually exclusive with `regionCode`
+     *          and `territoryCode`.
      * @return Deferred
      */
     staffInfo: function(options) {
@@ -866,7 +870,7 @@ module.exports = {
             throw new Error('legacy_hris connection not defined in the config');
         }
         
-        var regionCode, territoryCode;
+        var regionCode, territoryCode, territoryDesc;
         
         if (typeof options == 'string') {
             // For backwards compatibility from when regionCode was the
@@ -878,6 +882,7 @@ module.exports = {
             options = options || {};
             regionCode = options.regionCode || null;
             territoryCode = options.territoryCode || null;
+            territoryDesc = options.territoryDesc || null;
         }
         var nssrenID = options.nssrenID || null;
         
@@ -916,6 +921,10 @@ module.exports = {
                 else if (typeof territoryCode == 'string') {
                     whereConds.push("territory_GLCode = ?");
                     sqlParams.push(territoryCode);
+                }
+                else if (typeof territoryDesc == 'string') {
+                    whereConds.push("territory_desc LIKE ?");
+                    sqlParams.push(territoryDesc + '%');
                 }
                 
                 // Assemble conditions into WHERE clause

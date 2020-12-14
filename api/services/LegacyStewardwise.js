@@ -1425,7 +1425,14 @@ var Helper = {
 
     regionFromTerritory: function(entry) {
         if (entry) {
-            return entry.territory_desc.split('-',1);
+            // Try to match QX-123 format
+            var match = entry.territory_desc.match(/^\w\w-\d\d\d/);
+            if (match) {
+                return match[0];
+            }
+            else {
+                return entry.territory_desc.split('-',1);
+            }
         } else {
             return '??';
         }
