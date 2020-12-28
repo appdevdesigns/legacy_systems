@@ -844,6 +844,7 @@ module.exports = {
      *        "mpdGoal": <integer>,     // Family's MPD goal amount
      *        "dateJoined": <string>,   // date when joined staff
      *        "periodJoined": <string>, // fiscal period when joined staff
+     *        "mpdReportRecipient": <string>, // team leader who will receive the MPD report
      *      },
      *      ...
      *    ]
@@ -974,6 +975,7 @@ module.exports = {
                                 SUBSTR(w.worker_dateJoinedStaff, 6, 2)
                             ), 6
                         ) AS periodJoined,
+                        w.worker_mpdReportRecipient AS mpdReportRecipient,
                         xtl.location_id,
                         nr.ren_guid,
                         nr.nssren_id
